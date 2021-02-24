@@ -3,103 +3,20 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 import datetime
+import altair as alt
 
 # Importar dataset
 url = 'https://github.com/soilmo/Evernote/blob/main/notas_historico_new.xlsx?raw=true'
 
-@st.cache(persist=True)
+@st.cache(persist=True, max_entries = 20, ttl = 1800)
 def importar_base(url):
-    df = pd.read_excel(url)
+    df = pd.read_excel(url, usecols=['dt_creation', 'titulo', 'autor', 'tag_1', 'tag_2',
+       'tag_3', 'tag_4', 'tag_5', 'tag_6', 'texto', 'conclusao', 'pager'])
     return df
 
-# Importar base
-df = importar_base(url)
-
-# Criar lista com tags
-tags = list(df['tag_1'].append(df['tag_2']).append(df['tag_3']).append(df['tag_4']).append(df['tag_5']).append(df['tag_6']).unique())
-tags_clean = []
-for i in tags:
-    try:
-        if i[0]==".":
-            tags_clean.append(i)
-    except:
-        pass
-    
-for i in tags:
-    try:
-        if i[0]=="@":
-            tags_clean.append(i)
-    except:
-        pass
-
-for i in tags:
-    try:
-        if i=="News" or i=="Participants" or i == "Management":
-            tags_clean.append(i)
-    except:
-        pass
-
-# Lista com tags setoriais
-tags = list(df['tag_1'].append(df['tag_2']).append(df['tag_3']).append(df['tag_4']).append(df['tag_5']).append(df['tag_6']).unique())
-tags_setores = []
-for i in tags:
-    try:
-        if i[0]==".":
-            tags_setores.append(i)
-    except:
-        pass
-
-
-# Lista com tags empresas
-tags = list(df['tag_1'].append(df['tag_2']).append(df['tag_3']).append(df['tag_4']).append(df['tag_5']).append(df['tag_6']).unique())
-tags_empresas = []
-for i in tags:
-    try:
-        if i[0]=="@":
-            tags_empresas.append(i)
-    except:
-        pass
-
-# Criar lista com autores
-autores = list(df['autor'].unique())
-
-# Title
-st.title("Análises das notas do Evernote")
-st.header("Preview da base")
-
-# Preview da base
-if st.checkbox("Mostrar 5 primeiras linhas"):
-    st.write(df.head())
-if st.checkbox("Mostrar 5 últimas linhas"):
-    st.write(df.tail())
-if st.checkbox("Mostrar base inteira"):
-    st.write(df)
-if st.checkbox("Dimensões da base"):
-    st.write("A base contém", df.shape[0],"linhas e",df.shape[1],"colunas.")
-if st.checkbox("Informações para cada nota"):
-    st.write("As colunas de informações são",df.columns)
-
-# Período de análise
-st.header("Período de análise")
-dt_i = st.date_input("Qual o dia inicial do período?", datetime.datetime.now())
-dt_i = dt_i.strftime('%Y-%m-%d')
-st.write("A data inicial é",dt_i)
-
-dt_f = st.date_input("Qual o dia final do período?", datetime.datetime.now())
-dt_f = dt_f.strftime('%Y-%m-%d')
-st.write("A data final é",dt_f)
-
-
-# Graf Qtd de Notas por autor -------
-st.header("Notas por autor")
-
-if st.checkbox("Quero ver a quantidade de notas que cada analista fez em dado período"):
-    
-    # Filtros de datas para o perído
-    filtro_1 = df['dt_creation']>=dt_i
-    filtro_2 = df['dt_creation']<=dt_f
-
-    df_autor = df[(filtro_1) & (filtro_2)]
+# Qtd de Notas por autor
+@st.cache(persist=True, max_entries = 20, ttl = 1800)
+def notas_por_autor(df_autor, dt_i, dt_f):
 
     # Tirar as news
     filtro_1 = df_autor['tag_1']!="News"
@@ -109,27 +26,15 @@ if st.checkbox("Quero ver a quantidade de notas que cada analista fez em dado pe
     filtro_5 = df_autor['tag_5']!="News"
     filtro_6 = df_autor['tag_6']!="News"
     df_autor = df_autor[(filtro_1)&(filtro_2)&(filtro_3)&(filtro_4)&(filtro_5)&(filtro_6)]
-    
-    
 
-    st.success("Temos " + str(df_autor.shape[0])+ " notas")
     df_autor = df_autor.groupby(['autor'], as_index=False)['tag_1'].count()
     df_autor.columns = ["Autor","Quantidade"]
-    st.write(df_autor.sort_values(by='Quantidade',ascending = False))
-
-
-# Graf Qtd de Notas por tag ----------
-st.header("Notas por Tag")
-
-if st.checkbox("Quero ver a quantidade de notas com tags específicas em dado período"):
     
-    # Escolher tags
-    tags_selecionadas = st.multiselect("Quais tags quer?", options=tags_clean)
-    
-    filtro_1 = df['dt_creation']>=dt_i
-    filtro_2 = df['dt_creation']<=dt_f
+    return df_autor
 
-    df_tags = df[(filtro_1) & (filtro_2)]
+# Notas por tags
+@st.cache(persist=True, max_entries = 20, ttl = 1800)
+def notas_por_tags(df_tags, dt_i, dt_f, tags_selecionadas):
     
     for tag in tags_selecionadas:
         filtro_1 = df_tags['tag_1']==tag
@@ -150,29 +55,13 @@ if st.checkbox("Quero ver a quantidade de notas com tags específicas em dado pe
         df_tags = df_tags[(filtro_1)|(filtro_2)|(filtro_3)|(filtro_4)|(filtro_5)|(filtro_6)]
         
         df_tags = df_tags[(filtro_7)&(filtro_8)&(filtro_9)&(filtro_10)&(filtro_11)&(filtro_12)]
-    
-    st.success("Temos " + str(df_tags.shape[0])+ " notas com essas tags simultaneamente.")
-    st.write(df_tags[['titulo','dt_creation','autor']])
 
-
-# Graf Qtd de Notas por autor e por tag ----------
-
-st.header("Notas por Tag e Autor")
-
-if st.checkbox("Quero ver a quantidade de notas com tags específicas em dado período e de um determinado autor"):
+    return df_tags
     
+# Notas por tags
+@st.cache(persist=True, max_entries = 20, ttl = 1800)
+def notas_por_tags_autor(df_tags_autor, dt_i, dt_f, tags_selecionadas, autor):
     
-    filtro_1 = df['dt_creation']>=dt_i
-    filtro_2 = df['dt_creation']<=dt_f
-    df_tags_autor = df[(filtro_1) & (filtro_2)]
-    
-    # Escolher Tags
-    tags_selecionadas = st.multiselect("Quais tags escolhe?", options=tags_clean)
-    
-    # Escolher autor
-    autor = st.selectbox("Escolha um autor", options=autores)
-    st.write("Você escolheu", autor)
-
     # Filtrar as tags
     for tag in tags_selecionadas:
         filtro_1 = df_tags_autor['tag_1']==tag
@@ -191,117 +80,287 @@ if st.checkbox("Quero ver a quantidade de notas com tags específicas em dado pe
         filtro_12 = df_tags_autor['tag_6']!="News"
 
         df_tags_autor = df_tags_autor[(filtro_1)|(filtro_2)|(filtro_3)|(filtro_4)|(filtro_5)|(filtro_6)]
-        
         df_tags_autor = df_tags_autor[(filtro_7)&(filtro_8)&(filtro_9)&(filtro_10)&(filtro_11)&(filtro_12)]
 
     # Filtrar pelo autor
     df_tags_autor = df_tags_autor[df_tags_autor['autor']==autor]
+
+    return df_tags_autor
+
+# Criar lista com tags
+@st.cache(persist=True, max_entries = 20, ttl = 1800)
+def lista_tags_clean(df):
+
+    tags = list(df['tag_1'].append(df['tag_2']).append(df['tag_3']).append(df['tag_4']).append(df['tag_5']).append(df['tag_6']).unique())
+    tags_clean = []
+    for i in tags:
+        try:
+            if i[0]==".":
+                tags_clean.append(i)
+        except:
+            pass
+        
+    for i in tags:
+        try:
+            if i[0]=="@":
+                tags_clean.append(i)
+        except:
+            pass
+
+    for i in tags:
+        try:
+            if i=="News" or i=="Participants" or i == "Management":
+                tags_clean.append(i)
+        except:
+            pass
+    return tags_clean
+
+# Lista com tags setoriais
+@st.cache(persist=True, max_entries = 20, ttl = 1800)
+def lista_tags_setoriais(df):
+    tags = list(df['tag_1'].append(df['tag_2']).append(df['tag_3']).append(df['tag_4']).append(df['tag_5']).append(df['tag_6']).unique())
+    tags_setores = []
+    for i in tags:
+        try:
+            if i[0]==".":
+                tags_setores.append(i)
+        except:
+            pass
+    return tags_setores
+
+# Lista com tags empresas
+@st.cache(persist=True, max_entries = 20, ttl = 1800)
+def lista_tags_empresas(df):
+    tags = list(df['tag_1'].append(df['tag_2']).append(df['tag_3']).append(df['tag_4']).append(df['tag_5']).append(df['tag_6']).unique())
+    tags_empresas = []
+    for i in tags:
+        try:
+            if i[0]=="@":
+                tags_empresas.append(i)
+        except:
+            pass
+    return tags_empresas
+
+# Title
+st.title("Análises das notas do Evernote")
+st.header("Digite a senha para ter acesso às análises")
+senha = st.text_input("Senha","Digite aqui")
+#if st.button("Ter acesso"):
+if senha=="indie2021":
+    senha = senha.title()
+    st.success("Acesso autorizado.")
+    # Funcionalidades ------------------------
     
-    st.success("Temos " + str(df_tags_autor.shape[0])+ " notas com essas tags simultaneamente feitas por " + str(autor))
-    st.write(df_tags_autor[['titulo','dt_creation']])
+    # Período de análise
+    st.header("Período de análise")
+    dt_i = st.date_input("Qual o dia inicial do período?", datetime.datetime.now())
+    dt_i = dt_i.strftime('%Y-%m-%d')
+    st.write("A data inicial é",dt_i)
+
+    dt_f = st.date_input("Qual o dia final do período?", datetime.datetime.now())
+    dt_f = dt_f.strftime('%Y-%m-%d')
+    st.write("A data final é",dt_f)
+
+    if st.checkbox("Disponibilizar análises para esse período"):
+        # Importar base
+        df = importar_base(url)
+        
+        filtro_1 = df['dt_creation']>=dt_i
+        filtro_2 = df['dt_creation']<=dt_f
+        df = df[(filtro_1) & (filtro_2)]
+
+        # Criar lista com autores
+        autores = list(df['autor'].unique())
+        autores = [x for x in autores if str(x) != 'nan']
+
+        tags_clean = lista_tags_clean(df)
+        tags_setores = lista_tags_setoriais(df)
+        tags_empresas = lista_tags_empresas(df)
+
+        # Qtd de Notas por autor -------
+        st.header("Notas por autor")
+
+        if st.checkbox("Quero ver a quantidade de notas que cada analista fez em dado período"):
+            
+            df_autor = notas_por_autor(df,dt_i,dt_f)
+            
+            st.success("Temos " + str(df_autor['Quantidade'].sum())+ " notas")
+            st.write(df_autor.sort_values(by='Quantidade',ascending = False))
 
 
+        # Qtd de Notas por tag ----------
+        st.header("Notas por Tag")
 
-# Graf Barras Ranking Tags das Empresas ---------
+        if st.checkbox("Quero ver a quantidade de notas com tags específicas em dado período"):
+            
+            # Escolher tags
+            tags_selecionadas = st.multiselect("Quais tags quer?", options=tags_clean)
+            
+            df_tags = notas_por_tags(df, dt_i, dt_f, tags_selecionadas)
+            st.success("Temos " + str(df_tags.shape[0])+ " notas com essas tags simultaneamente.")
+            st.write(df_tags[['titulo','dt_creation','autor']])
 
-st.header("Ranking das Tags de Empresas")
+        # Qtd de Notas por autor e por tag ----------
 
-if st.checkbox("Quero ver as tags de empresas mais comentadas"):
-    
-    filtro_1 = df['dt_creation']>=dt_i
-    filtro_2 = df['dt_creation']<=dt_f
-    df_rnk_empresa = df[(filtro_1) & (filtro_2)]
+        st.header("Notas por Tag e Autor")
 
-    df_qtd_empresa = pd.DataFrame({
-        'empresa':'',
-        'qtd':''
-    }, index=[0])
+        if st.checkbox("Quero ver a quantidade de notas com tags específicas em dado período e de um determinado autor"):
+            
+            # Escolher autor
+            autor = st.selectbox("Escolha um autor", options=autores)
+            st.write("Você escolheu", autor)
 
-    for i in tags_empresas:
-        qtd = 0
-        qtd = df_rnk_empresa[df_rnk_empresa['tag_1']==i].shape[0]+df_rnk_empresa[df_rnk_empresa['tag_2']==i].shape[0]+df_rnk_empresa[df_rnk_empresa['tag_3']==i].shape[0]+df_rnk_empresa[df_rnk_empresa['tag_4']==i].shape[0]+df_rnk_empresa[df_rnk_empresa['tag_5']==i].shape[0]+df_rnk_empresa[df_rnk_empresa['tag_6']==i].shape[0]
-        aux = pd.DataFrame({
-                'empresa':i,
-                'qtd':qtd
+            # Escolher Tags
+            tags_selecionadas = st.multiselect("Quais tags escolhe?", options=tags_clean)
+            
+            df_tags_autor = notas_por_tags_autor(df, dt_i, dt_f, tags_selecionadas, autor)
+            
+            st.success("Temos " + str(df_tags_autor.shape[0])+ " notas com essas tags simultaneamente feitas por " + str(autor))
+            st.write(df_tags_autor[['titulo','dt_creation']])
+
+        # Graf Barras Ranking Tags das Empresas ---------
+
+        st.header("Ranking das Tags de Empresas")
+
+        if st.checkbox("Quero ver as tags de empresas mais comentadas"):
+            
+            # Quantidade de empresas
+            m = st.slider("Selecione a quantidade de empresas a mostrar",1,20)
+
+            df_rnk_empresa = df
+            df_qtd_empresa = pd.DataFrame({
+                'empresa':'',
+                'qtd':''
             }, index=[0])
-        df_qtd_empresa = df_qtd_empresa.append(aux)
-        df_qtd_empresa = df_qtd_empresa[df_qtd_empresa['qtd']!=""]
-        df_qtd_empresa = df_qtd_empresa.sort_values(by='qtd', ascending = False)
 
-    df_qtd_empresa = df_qtd_empresa[df_qtd_empresa['qtd']>0]
+            for i in tags_empresas:
+                qtd = 0
+                qtd = df_rnk_empresa[df_rnk_empresa['tag_1']==i].shape[0]+df_rnk_empresa[df_rnk_empresa['tag_2']==i].shape[0]+df_rnk_empresa[df_rnk_empresa['tag_3']==i].shape[0]+df_rnk_empresa[df_rnk_empresa['tag_4']==i].shape[0]+df_rnk_empresa[df_rnk_empresa['tag_5']==i].shape[0]+df_rnk_empresa[df_rnk_empresa['tag_6']==i].shape[0]
+                aux = pd.DataFrame({
+                        'empresa':i,
+                        'qtd':qtd
+                    }, index=[0])
+                df_qtd_empresa = df_qtd_empresa.append(aux)
+                df_qtd_empresa = df_qtd_empresa[df_qtd_empresa['qtd']!=""]
+                df_qtd_empresa = df_qtd_empresa.sort_values(by='qtd', ascending = False)
 
-    m = st.slider("Selecione a quantidade de empresas a mostrar",1,30)
+            df_qtd_empresa = df_qtd_empresa[df_qtd_empresa['qtd']>0]
+            
+            # Gráfico Altair
+            bars = alt.Chart(df_qtd_empresa.iloc[0:m,:]).mark_bar().encode(
+                x='qtd',
+                y="empresa"
+            )
+            text = bars.mark_text(
+                align='left',
+                baseline='middle',
+                dx=3  # Nudges text to right so it doesn't appear on top of the bar
+            ).encode(
+                text='qtd'
+            )
+            f_empresas = (bars + text).properties(height=50*m+30, width = 700)
+            st.write(f_empresas)
+            
 
-    # Montar gráfico
-    sns.set_color_codes("pastel")
+        # Graf Barras Ranking Tags das Setores ---------
+        st.header("Ranking das Tags de Setores")
 
-    f_empresa, ax = plt.subplots(figsize=(df_qtd_empresa['qtd'].max(), m+2))
+        if st.checkbox("Quero ver as tags de setores mais comentadas"):
+            
+            filtro_1 = df['dt_creation']>=dt_i
+            filtro_2 = df['dt_creation']<=dt_f
+            df_rnk_setor = df[(filtro_1) & (filtro_2)]
 
-    sns.barplot(x="qtd", y="empresa", data=df_qtd_empresa.iloc[0:m,],color="b")
-
-    ax.set(xlim=(0, df_qtd_empresa['qtd'].max() + 2), ylabel="Setor",
-        xlabel="Quantidade de Notas")
-
-    for p in ax.patches:
-        width = p.get_width()    # get bar length
-        ax.text(width + 0.3,       # set the text at 1 unit right of the bar
-                p.get_y() + p.get_height() / 2, # get Y coordinate + X coordinate / 2
-                '{:1.0f}'.format(width), # set variable to display, 2 decimals
-                ha = 'left',   # horizontal alignment
-                va = 'center')  # vertical alignment
-
-    # Plotar gráfico no streamlit
-    st.pyplot(f_empresa)
-
-
-# Graf Barras Ranking Tags das Setores ---------
-st.header("Ranking das Tags de Setores")
-
-if st.checkbox("Quero ver as tags de setores mais comentadas"):
-    
-    filtro_1 = df['dt_creation']>=dt_i
-    filtro_2 = df['dt_creation']<=dt_f
-    df_rnk_setor = df[(filtro_1) & (filtro_2)]
-
-    df_qtd_setores = pd.DataFrame({
-        'setor':'',
-        'qtd':''
-    }, index=[0])
-
-    for i in tags_setores:
-        qtd = 0
-        qtd = df_rnk_setor[df_rnk_setor['tag_1']==i].shape[0]+df_rnk_setor[df_rnk_setor['tag_2']==i].shape[0]+df_rnk_setor[df_rnk_setor['tag_3']==i].shape[0]+df_rnk_setor[df_rnk_setor['tag_4']==i].shape[0]+df_rnk_setor[df_rnk_setor['tag_5']==i].shape[0]+df_rnk_setor[df_rnk_setor['tag_6']==i].shape[0]
-        aux = pd.DataFrame({
-                'setor':i,
-                'qtd':qtd
+            df_qtd_setores = pd.DataFrame({
+                'setor':'',
+                'qtd':''
             }, index=[0])
-        df_qtd_setores = df_qtd_setores.append(aux)
-        df_qtd_setores = df_qtd_setores[df_qtd_setores['qtd']!=""]
-        df_qtd_setores = df_qtd_setores.sort_values(by='qtd', ascending = False)
 
-    df_qtd_setores = df_qtd_setores[df_qtd_setores['qtd']>0]
+            for i in tags_setores:
+                qtd = 0
+                qtd = df_rnk_setor[df_rnk_setor['tag_1']==i].shape[0]+df_rnk_setor[df_rnk_setor['tag_2']==i].shape[0]+df_rnk_setor[df_rnk_setor['tag_3']==i].shape[0]+df_rnk_setor[df_rnk_setor['tag_4']==i].shape[0]+df_rnk_setor[df_rnk_setor['tag_5']==i].shape[0]+df_rnk_setor[df_rnk_setor['tag_6']==i].shape[0]
+                aux = pd.DataFrame({
+                        'setor':i,
+                        'qtd':qtd
+                    }, index=[0])
+                df_qtd_setores = df_qtd_setores.append(aux)
+                df_qtd_setores = df_qtd_setores[df_qtd_setores['qtd']!=""]
+                df_qtd_setores = df_qtd_setores.sort_values(by='qtd', ascending = False)
 
-    n = st.slider("Selecione a quantidade de setores a mostrar",1,df_qtd_setores.shape[0])
+            df_qtd_setores = df_qtd_setores[df_qtd_setores['qtd']>0]
+            n = st.slider("Selecione a quantidade de setores a mostrar",1,df_qtd_setores.shape[0])
 
-    # Montar gráfico
-    sns.set_color_codes("pastel")
+            # Gráfico Altair
+            bars = alt.Chart(df_qtd_setores.iloc[0:n,:]).mark_bar().encode(
+                x='qtd',
+                y="setor"
+            )
+            text = bars.mark_text(
+                align='left',
+                baseline='middle',
+                dx=3  # Nudges text to right so it doesn't appear on top of the bar
+            ).encode(
+                text='qtd'
+            )
+            f_setores = (bars + text).properties(height=50*n+30, width = 700)
+            st.write(f_setores)
+            
 
-    f_setores, ax = plt.subplots(figsize=(df_qtd_setores['qtd'].max(), n+2))
+        # Geração de conteúdo no tempo ---------
+        st.header("Geração de notas ao longo do tempo")
 
-    sns.barplot(x="qtd", y="setor", data=df_qtd_setores.iloc[0:n,],color="b")
+        if st.checkbox("Quero ver a evolução de criação de notas"):
+            
+            df_evolucao = df
 
-    ax.set(xlim=(0, df_qtd_setores['qtd'].max() + 2), ylabel="Setor",
-        xlabel="Quantidade de Notas")
+            # Escolher autor
+            autores.append("Todos")
+            autor = st.selectbox("Qual o autor?", options=autores)
+            st.write("Você escolheu", autor)
 
-    for p in ax.patches:
-        width = p.get_width()    # get bar length
-        ax.text(width + 0.3,       # set the text at 1 unit right of the bar
-                p.get_y() + p.get_height() / 2, # get Y coordinate + X coordinate / 2
-                '{:1.0f}'.format(width), # set variable to display, 2 decimals
-                ha = 'left',   # horizontal alignment
-                va = 'center')  # vertical alignment
+            # Escolher Tags
+            tags_selecionadas = st.multiselect("Escoha as tags de interesse", options=tags_clean)
+            # Filtrar as tags
+            for tag in tags_selecionadas:
+                filtro_1 = df_evolucao['tag_1']==tag
+                filtro_2 = df_evolucao['tag_2']==tag
+                filtro_3 = df_evolucao['tag_3']==tag
+                filtro_4 = df_evolucao['tag_4']==tag
+                filtro_5 = df_evolucao['tag_5']==tag
+                filtro_6 = df_evolucao['tag_6']==tag
 
-    # Plotar gráfico no streamlit
-    st.pyplot(f_setores)
+                # Tirar as News
+                filtro_7 = df_evolucao['tag_1']!="News"
+                filtro_8 = df_evolucao['tag_2']!="News"
+                filtro_9 = df_evolucao['tag_3']!="News"
+                filtro_10 = df_evolucao['tag_4']!="News"
+                filtro_11 = df_evolucao['tag_5']!="News"
+                filtro_12 = df_evolucao['tag_6']!="News"
+
+                df_evolucao = df_evolucao[(filtro_1)|(filtro_2)|(filtro_3)|(filtro_4)|(filtro_5)|(filtro_6)]
+                df_evolucao = df_evolucao[(filtro_7)&(filtro_8)&(filtro_9)&(filtro_10)&(filtro_11)&(filtro_12)]
+
+            # Filtrar pelo autor
+            if autor != "Todos":
+                df_evolucao = df_evolucao[df_evolucao['autor']==autor]
+
+            # Plotar gráfico
+            df_evolucao = df_evolucao.groupby(['dt_creation'], as_index=False)['titulo'].count()
+            df_evolucao.columns = ['Data','Notas']
+            f_evolucao = alt.Chart(df_evolucao).mark_bar().encode(
+                x='Data',
+                y='Notas'
+            ).properties(height=500, width = 800)
+            st.write(f_evolucao)
+            
+
+else:
+    st.warning("Senha errada. Acesso não autorizado.")
+
+
+
+
+
+
 
 
