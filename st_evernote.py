@@ -248,8 +248,8 @@ if senha=="indie2021":
             
             # Gráfico Altair
             bars = alt.Chart(df_qtd_empresa.iloc[0:m,:]).mark_bar().encode(
-                x='qtd',
-                y="empresa"
+                alt.X('qtd'),
+                alt.Y("empresa",sort=alt.EncodingSortField(field="qtd", op="count", order='ascending'))
             )
             text = bars.mark_text(
                 align='left',
@@ -267,9 +267,7 @@ if senha=="indie2021":
 
         if st.checkbox("Quero ver as tags de setores mais comentadas"):
             
-            filtro_1 = df['dt_creation']>=dt_i
-            filtro_2 = df['dt_creation']<=dt_f
-            df_rnk_setor = df[(filtro_1) & (filtro_2)]
+            df_rnk_setor = df
 
             df_qtd_setores = pd.DataFrame({
                 'setor':'',
@@ -292,8 +290,8 @@ if senha=="indie2021":
 
             # Gráfico Altair
             bars = alt.Chart(df_qtd_setores.iloc[0:n,:]).mark_bar().encode(
-                x='qtd',
-                y="setor"
+                alt.X('qtd'),
+                alt.Y("setor",sort=alt.EncodingSortField(field="qtd", op="count", order='ascending'))
             )
             text = bars.mark_text(
                 align='left',
