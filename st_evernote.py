@@ -7,19 +7,101 @@ import altair as alt
 import spacy
 from PIL import Image
 from wordcloud import WordCloud, STOPWORDS
+import yfinance as yf  
 
 
 # Importar dataset
-url = 'https://github.com/soilmo/Evernote/blob/main/notas_historico_new.xlsx?raw=true'
+url_dataset = 'https://github.com/soilmo/Evernote/blob/main/notas_historico_new.xlsx?raw=true'
 
-@st.cache(persist=True, max_entries = 20, ttl = 1800)
+@st.cache(persist=True, max_entries = 20, ttl = 1800, show_spinner=False)
 def importar_base(url):
     df = pd.read_excel(url, usecols=['dt_creation', 'titulo', 'autor', 'tag_1', 'tag_2',
        'tag_3', 'tag_4', 'tag_5', 'tag_6', 'texto', 'conclusao', 'pager'])
     return df
 
+# Importar tickers
+url_tickers = 'https://raw.githubusercontent.com/soilmo/Evernote/main/tickers.csv'
+
+@st.cache(persist=True, max_entries = 20, ttl = 1800, show_spinner=False)
+def importar_tickers(url):
+    tickers = pd.read_csv(url)
+    tickers = pd.read_csv('tickers.csv')
+    tickers['ticker']=tickers['ticker'].apply(lambda x:x.replace(" BZ EQUITY",""))
+    tickers['tag']=tickers['ticker'].apply(lambda x:("@"+str(x[0:4])))
+    return tickers, list(tickers['ticker'])
+
+# Pegar preços
+@st.cache(persist=True, max_entries = 20, ttl = 1800, show_spinner=False)
+def get_prices(ticker, dt_i, dt_f, df):
+    df_ticker = yf.Ticker(ticker+str(".SA"))
+
+    #get the historical prices for this ticker
+    df_ticker = df_ticker.history(period='1d', start=dt_i, end=dt_f)
+    df_ticker=df_ticker.reset_index()
+    df_ticker['ticker']=ticker
+
+    df_ticker = df_ticker[['Date','ticker',"Close"]]
+    df_ticker['interacao']=0
+
+    for i in range(0,df_ticker.shape[0]):
+        
+        ticker = df_ticker.iloc[i,1]
+        dt = df_ticker.iloc[i,0]
+        tag = tickers[tickers['ticker']==ticker]['tag'].iloc[0]
+        interacao = get_interacao(tag, dt, df)
+        if interacao > 0:
+            print(ticker, dt, tag, interacao)
+        
+        df_ticker.iloc[i,3]=interacao
+
+    return df_ticker
+
+# Contar interações
+@st.cache(persist=True, max_entries = 20, ttl = 1800, show_spinner=False)
+def get_interacao(tag, dt, df_notas):
+    
+    interacao = 0
+    aux = df_notas
+    
+    # Tirar as News
+    filtro_7 = aux['tag_1']!="News"
+    filtro_8 = aux['tag_2']!="News"
+    filtro_9 = aux['tag_3']!="News"
+    filtro_10 = aux['tag_4']!="News"
+    filtro_11 = aux['tag_5']!="News"
+    filtro_12 = aux['tag_6']!="News"
+
+    aux = aux[(filtro_7)&(filtro_8)&(filtro_9)&(filtro_10)&(filtro_11)&(filtro_12)]
+
+    filtro = aux['dt_creation']==dt
+    try:
+        tag_1 = aux[filtro]['tag_1'].iloc[0]
+        tag_2 = aux[filtro]['tag_2'].iloc[0]
+        tag_3 = aux[filtro]['tag_3'].iloc[0]
+        tag_4 = aux[filtro]['tag_4'].iloc[0]
+        tag_5 = aux[filtro]['tag_5'].iloc[0]
+        tag_6 = aux[filtro]['tag_6'].iloc[0]
+
+        if (tag_1 == tag):
+            interacao += 1
+        if (tag_2 == tag):
+            interacao += 1
+        if (tag_3 == tag):
+            interacao += 1
+        if (tag_4 == tag):
+            interacao += 1
+        if (tag_5 == tag):
+            interacao += 1
+        if (tag_6 == tag):
+            interacao += 1
+    except:
+        pass
+
+            
+    return interacao
+
 # Qtd de Notas por autor
-@st.cache(persist=True, max_entries = 20, ttl = 1800)
+@st.cache(persist=True, max_entries = 20, ttl = 1800, show_spinner=False)
 def notas_por_autor(df_autor, dt_i, dt_f):
 
     # Tirar as news
@@ -37,7 +119,7 @@ def notas_por_autor(df_autor, dt_i, dt_f):
     return df_autor
 
 # Notas por tags
-@st.cache(persist=True, max_entries = 20, ttl = 1800)
+@st.cache(persist=True, max_entries = 20, ttl = 1800, show_spinner=False)
 def notas_por_tags(df_tags, dt_i, dt_f, tags_selecionadas):
     
     for tag in tags_selecionadas:
@@ -63,7 +145,7 @@ def notas_por_tags(df_tags, dt_i, dt_f, tags_selecionadas):
     return df_tags
     
 # Notas por tags
-@st.cache(persist=True, max_entries = 20, ttl = 1800)
+@st.cache(persist=True, max_entries = 20, ttl = 1800, show_spinner=False)
 def notas_por_tags_autor(df_tags_autor, dt_i, dt_f, tags_selecionadas, autor):
     
     # Filtrar as tags
@@ -93,7 +175,7 @@ def notas_por_tags_autor(df_tags_autor, dt_i, dt_f, tags_selecionadas, autor):
     return df_tags_autor
 
 # Criar lista com tags
-@st.cache(persist=True, max_entries = 20, ttl = 1800)
+@st.cache(persist=True, max_entries = 20, ttl = 1800, show_spinner=False)
 def lista_tags_clean(df):
 
     tags = list(df['tag_1'].append(df['tag_2']).append(df['tag_3']).append(df['tag_4']).append(df['tag_5']).append(df['tag_6']).unique())
@@ -114,14 +196,14 @@ def lista_tags_clean(df):
 
     for i in tags:
         try:
-            if i=="News" or i=="Participants" or i == "Management":
+            if i=="News" or i=="Participants" or i == "Management" or i == "ESG":
                 tags_clean.append(i)
         except:
             pass
     return tags_clean
 
 # Lista com tags setoriais
-@st.cache(persist=True, max_entries = 20, ttl = 1800)
+@st.cache(persist=True, max_entries = 20, ttl = 1800, show_spinner=False)
 def lista_tags_setoriais(df):
     tags = list(df['tag_1'].append(df['tag_2']).append(df['tag_3']).append(df['tag_4']).append(df['tag_5']).append(df['tag_6']).unique())
     tags_setores = []
@@ -134,7 +216,7 @@ def lista_tags_setoriais(df):
     return tags_setores
 
 # Lista com tags empresas
-@st.cache(persist=True, max_entries = 20, ttl = 1800)
+@st.cache(persist=True, max_entries = 20, ttl = 1800, show_spinner=False)
 def lista_tags_empresas(df):
     tags = list(df['tag_1'].append(df['tag_2']).append(df['tag_3']).append(df['tag_4']).append(df['tag_5']).append(df['tag_6']).unique())
     tags_empresas = []
@@ -147,7 +229,7 @@ def lista_tags_empresas(df):
     return tags_empresas
 
 # Funções para word cloud -------------------------------------
-@st.cache(persist=True, max_entries = 20, ttl = 1800)
+@st.cache(persist=True, max_entries = 20, ttl = 1800, show_spinner=False)
 def stop_lemma(texto, palavras_inuteis):
     nlp = spacy.load('pt_core_news_sm-2.3.0')
     doc = nlp(texto)
@@ -157,7 +239,7 @@ def stop_lemma(texto, palavras_inuteis):
     return filtered_tokens
 
 # Define a function to plot word cloud
-@st.cache(persist=True, max_entries = 20, ttl = 1800)
+@st.cache(persist=True, max_entries = 20, ttl = 1800, show_spinner=False)
 def plot_cloud(wordcloud):
     # Set figure size
     plt.figure(figsize=(40, 30))
@@ -166,7 +248,7 @@ def plot_cloud(wordcloud):
     # No axis details
     plt.axis("off")
 
-@st.cache(persist=True, max_entries = 20, ttl = 1800)
+@st.cache(persist=True, max_entries = 20, ttl = 1800, show_spinner=False)
 def minusculo(tokens):
     tokens_low = []
     for i in tokens:
@@ -174,7 +256,7 @@ def minusculo(tokens):
     return tokens_low
 
 # Definir tokens e str_word para word cloud
-@st.cache(persist=True, max_entries = 20, ttl = 1800, suppress_st_warning=True)
+@st.cache(persist=True, max_entries = 20, ttl = 1800, suppress_st_warning=True, show_spinner=False)
 def token_and_str_word(df):
 
     # Montar tokens
@@ -248,7 +330,7 @@ if senha=="indie2021":
 
     if st.checkbox("Disponibilizar análises para esse período"):
         # Importar base
-        df = importar_base(url)
+        df = importar_base(url_dataset)
         
         filtro_1 = df['dt_creation']>=dt_i
         filtro_2 = df['dt_creation']<=dt_f
@@ -417,7 +499,7 @@ if senha=="indie2021":
                 ).properties(height=500, width = 800)
                 st.write(f_evolucao)
             
-        # Geração de conteúdo no tempo ---------
+        # Mapa de palavras ---------
         st.header("Análise de conteúdo")
         if st.checkbox("Quero ver criar um mapa de palavras das notas"):
             
@@ -432,13 +514,34 @@ if senha=="indie2021":
             if st.button("Gerar Mapa de Palavras"):
                 df_mapa = notas_por_tags_autor(df, dt_i, dt_f, tags_selecionadas, autor)
                 tokens, str_word = token_and_str_word(df_mapa)
-                #df_qtd_palavras = pd.DataFrame(list(dict((x,tokens.count(x)) for x in set(tokens)).items()), columns = ['palavra','qtd'])
-                #st.write(df_qtd_palavras.sort_values(by='qtd', ascending=False).head(10))
                 # Generate word cloud
                 wordcloud = WordCloud(width = 700, height = 500, random_state=1, background_color='white', colormap='seismic', collocations=False, stopwords = STOPWORDS).generate(str_word)
                 st.image(wordcloud.to_array())
-            
 
+        # Preços vs interação ---------
+        st.header("Preços vs Interações")
+        if st.checkbox("Quero ver as interações ao longo do Price Action"):
+            # Ler tickers disponíveis
+            tickers, lista_tickers = importar_tickers(url_tickers)
+            empresa = st.selectbox("Qual empresa quer olhar?", options=lista_tickers)
+            st.write("Vc escolheu", empresa)
+
+            if st.button("Gerar gráfico de Preços vs Interações"):
+                df_ticker = get_prices(empresa, dt_i, dt_f, df)
+                base = alt.Chart(df_ticker).encode(x='Date')
+                line =  base.mark_line(color='red').encode(
+                    y='Close'
+                ).interactive()
+                point = base.mark_point().encode(
+                    y='Close',
+                    size='interacao'
+                ).interactive()
+                st.write((line+point).properties(height=500, width = 800))
+
+            
+  
+
+        
 
 else:
     st.warning("Senha errada. Acesso não autorizado.")
