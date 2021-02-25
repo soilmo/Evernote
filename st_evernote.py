@@ -4,6 +4,10 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import datetime
 import altair as alt
+import spacy
+from PIL import Image
+from wordcloud import WordCloud, STOPWORDS
+
 
 # Importar dataset
 url = 'https://github.com/soilmo/Evernote/blob/main/notas_historico_new.xlsx?raw=true'
@@ -83,7 +87,8 @@ def notas_por_tags_autor(df_tags_autor, dt_i, dt_f, tags_selecionadas, autor):
         df_tags_autor = df_tags_autor[(filtro_7)&(filtro_8)&(filtro_9)&(filtro_10)&(filtro_11)&(filtro_12)]
 
     # Filtrar pelo autor
-    df_tags_autor = df_tags_autor[df_tags_autor['autor']==autor]
+    if autor != "Todos":
+        df_tags_autor = df_tags_autor[df_tags_autor['autor']==autor]
 
     return df_tags_autor
 
@@ -141,6 +146,86 @@ def lista_tags_empresas(df):
             pass
     return tags_empresas
 
+# Funções para word cloud -------------------------------------
+@st.cache(persist=True, max_entries = 20, ttl = 1800)
+def stop_lemma(texto, palavras_inuteis):
+    nlp = spacy.load('pt_core_news_sm-2.3.0')
+    doc = nlp(texto)
+    # Tirar Stop Words e Lematização
+    filtered_tokens = [token.lemma_ for token in doc if not token.is_stop]
+    
+    return filtered_tokens
+
+# Define a function to plot word cloud
+@st.cache(persist=True, max_entries = 20, ttl = 1800)
+def plot_cloud(wordcloud):
+    # Set figure size
+    plt.figure(figsize=(40, 30))
+    # Display image
+    plt.imshow(wordcloud) 
+    # No axis details
+    plt.axis("off")
+
+@st.cache(persist=True, max_entries = 20, ttl = 1800)
+def minusculo(tokens):
+    tokens_low = []
+    for i in tokens:
+        tokens_low.append(i.lower())
+    return tokens_low
+
+# Definir tokens e str_word para word cloud
+@st.cache(persist=True, max_entries = 20, ttl = 1800, suppress_st_warning=True)
+def token_and_str_word(df):
+
+    # Montar tokens
+    
+    palavras_inuteis = [',',';','a','o','O','as','os','e','para','por','?','!','Não','nao','Nao','não','E','.','-','/',
+                    '..','...','<','>','(',')',':','&','$','%','§','pra', ' ','a','b','c','d','e','f','g','h','i','j',
+                    'k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z','ano','hoje','ontem','yoy','"','mercar',
+                    'ficar','ter','entrar','empresar','the','ser','and','to','is','are','on','in','the','it','of','ir','group','ex',
+                    '*','"','dar','lixar','ciar','haver','dia','riscar','receitar','“','”','falar','etc','eh','fm','achar',
+                    'ja','já','fazer','conseguir','R$','r$','passar','+','-','that','per','mt','with','by','pq','cent',
+                    'br','us','hj','dp','ver','contar','estao','mto','=','share','volumar','mm','1x1','sp','en-export',
+                    'port','n-export','iv','tesar','rgb','varejar','width','ha','dele','dela','desse','outro']
+    my_bar = st.progress(0)
+    t = 1
+    tokens = []
+    erros = 0
+    aux = df
+    
+    for texto in aux['texto']:
+        try:
+            tokens = tokens + minusculo(stop_lemma(texto, palavras_inuteis))
+        except:
+            erros = erros + 1
+
+        evol = t/len(aux['texto'])
+        my_bar.progress(evol)
+        #st.write("Evolução do processo: {0:1.1f}%".format(100*i/len(aux['texto'])))
+        t+=1
+
+    tokens_clean = ['']
+
+    for i in tokens:
+        if (i in palavras_inuteis)==False:
+            tokens_clean.append(i)
+    tokens = tokens_clean
+
+    # Filtrar numeros
+    tokens_clean = []
+    for i in tokens:
+        if i.isnumeric()==False:
+            tokens_clean.append(i)
+    tokens = tokens_clean
+            
+    str_word = ''
+    for i in tokens:
+        str_word = str_word + " " + i
+    
+    return tokens, str_word
+
+# -----------------------------------------------------------
+
 # Title
 st.title("Análises das notas do Evernote")
 st.header("Digite a senha para ter acesso às análises")
@@ -196,9 +281,10 @@ if senha=="indie2021":
             # Escolher tags
             tags_selecionadas = st.multiselect("Quais tags quer?", options=tags_clean)
             
-            df_tags = notas_por_tags(df, dt_i, dt_f, tags_selecionadas)
-            st.success("Temos " + str(df_tags.shape[0])+ " notas com essas tags simultaneamente.")
-            st.write(df_tags[['titulo','dt_creation','autor']])
+            if st.button("Ver notas por tag"):
+                df_tags = notas_por_tags(df, dt_i, dt_f, tags_selecionadas)
+                st.success("Temos " + str(df_tags.shape[0])+ " notas com essas tags simultaneamente.")
+                st.write(df_tags[['titulo','dt_creation','autor']])
 
         # Qtd de Notas por autor e por tag ----------
 
@@ -212,11 +298,10 @@ if senha=="indie2021":
 
             # Escolher Tags
             tags_selecionadas = st.multiselect("Quais tags escolhe?", options=tags_clean)
-            
-            df_tags_autor = notas_por_tags_autor(df, dt_i, dt_f, tags_selecionadas, autor)
-            
-            st.success("Temos " + str(df_tags_autor.shape[0])+ " notas com essas tags simultaneamente feitas por " + str(autor))
-            st.write(df_tags_autor[['titulo','dt_creation']])
+            if st.button("Ver notas por tags e autor"):
+                df_tags_autor = notas_por_tags_autor(df, dt_i, dt_f, tags_selecionadas, autor)
+                st.success("Temos " + str(df_tags_autor.shape[0])+ " notas com essas tags simultaneamente feitas por " + str(autor))
+                st.write(df_tags_autor[['titulo','dt_creation']])
 
         # Graf Barras Ranking Tags das Empresas ---------
 
@@ -246,21 +331,23 @@ if senha=="indie2021":
 
             df_qtd_empresa = df_qtd_empresa[df_qtd_empresa['qtd']>0]
             
-            # Gráfico Altair
-            bars = alt.Chart(df_qtd_empresa.iloc[0:m,:]).mark_bar().encode(
-                alt.X('qtd'),
-                alt.Y("empresa",sort=alt.EncodingSortField(field="qtd", op="count", order='ascending'))
-            )
-            text = bars.mark_text(
-                align='left',
-                baseline='middle',
-                dx=3  # Nudges text to right so it doesn't appear on top of the bar
-            ).encode(
-                text='qtd'
-            )
-            f_empresas = (bars + text).properties(height=50*m+30, width = 700)
-            st.write(f_empresas)
-            
+            if st.button("Ver gráfico de ranking das tags de empresas"):
+
+                # Gráfico Altair
+                bars = alt.Chart(df_qtd_empresa.iloc[0:m,:]).mark_bar().encode(
+                    alt.X('qtd'),
+                    alt.Y("empresa",sort=alt.EncodingSortField(field="qtd", op="count", order='ascending'))
+                )
+                text = bars.mark_text(
+                    align='left',
+                    baseline='middle',
+                    dx=3  # Nudges text to right so it doesn't appear on top of the bar
+                ).encode(
+                    text='qtd'
+                )
+                f_empresas = (bars + text).properties(height=50*m+30, width = 700)
+                st.write(f_empresas)
+                
 
         # Graf Barras Ranking Tags das Setores ---------
         st.header("Ranking das Tags de Setores")
@@ -288,29 +375,28 @@ if senha=="indie2021":
             df_qtd_setores = df_qtd_setores[df_qtd_setores['qtd']>0]
             n = st.slider("Selecione a quantidade de setores a mostrar",1,df_qtd_setores.shape[0])
 
-            # Gráfico Altair
-            bars = alt.Chart(df_qtd_setores.iloc[0:n,:]).mark_bar().encode(
-                alt.X('qtd'),
-                alt.Y("setor",sort=alt.EncodingSortField(field="qtd", op="count", order='ascending'))
-            )
-            text = bars.mark_text(
-                align='left',
-                baseline='middle',
-                dx=3  # Nudges text to right so it doesn't appear on top of the bar
-            ).encode(
-                text='qtd'
-            )
-            f_setores = (bars + text).properties(height=50*n+30, width = 700)
-            st.write(f_setores)
-            
+            if st.button("Ver gráfico de ranking das tags de setores"):
+
+                # Gráfico Altair
+                bars = alt.Chart(df_qtd_setores.iloc[0:n,:]).mark_bar().encode(
+                    alt.X('qtd'),
+                    alt.Y("setor",sort=alt.EncodingSortField(field="qtd", op="count", order='ascending'))
+                )
+                text = bars.mark_text(
+                    align='left',
+                    baseline='middle',
+                    dx=3  # Nudges text to right so it doesn't appear on top of the bar
+                ).encode(
+                    text='qtd'
+                )
+                f_setores = (bars + text).properties(height=50*n+30, width = 700)
+                st.write(f_setores)
 
         # Geração de conteúdo no tempo ---------
         st.header("Geração de notas ao longo do tempo")
 
         if st.checkbox("Quero ver a evolução de criação de notas"):
             
-            df_evolucao = df
-
             # Escolher autor
             autores.append("Todos")
             autor = st.selectbox("Qual o autor?", options=autores)
@@ -318,39 +404,41 @@ if senha=="indie2021":
 
             # Escolher Tags
             tags_selecionadas = st.multiselect("Escoha as tags de interesse", options=tags_clean)
-            # Filtrar as tags
-            for tag in tags_selecionadas:
-                filtro_1 = df_evolucao['tag_1']==tag
-                filtro_2 = df_evolucao['tag_2']==tag
-                filtro_3 = df_evolucao['tag_3']==tag
-                filtro_4 = df_evolucao['tag_4']==tag
-                filtro_5 = df_evolucao['tag_5']==tag
-                filtro_6 = df_evolucao['tag_6']==tag
 
-                # Tirar as News
-                filtro_7 = df_evolucao['tag_1']!="News"
-                filtro_8 = df_evolucao['tag_2']!="News"
-                filtro_9 = df_evolucao['tag_3']!="News"
-                filtro_10 = df_evolucao['tag_4']!="News"
-                filtro_11 = df_evolucao['tag_5']!="News"
-                filtro_12 = df_evolucao['tag_6']!="News"
+            if st.button("Ver evolução"):
 
-                df_evolucao = df_evolucao[(filtro_1)|(filtro_2)|(filtro_3)|(filtro_4)|(filtro_5)|(filtro_6)]
-                df_evolucao = df_evolucao[(filtro_7)&(filtro_8)&(filtro_9)&(filtro_10)&(filtro_11)&(filtro_12)]
-
-            # Filtrar pelo autor
-            if autor != "Todos":
-                df_evolucao = df_evolucao[df_evolucao['autor']==autor]
-
-            # Plotar gráfico
-            df_evolucao = df_evolucao.groupby(['dt_creation'], as_index=False)['titulo'].count()
-            df_evolucao.columns = ['Data','Notas']
-            f_evolucao = alt.Chart(df_evolucao).mark_bar().encode(
-                x='Data',
-                y='Notas'
-            ).properties(height=500, width = 800)
-            st.write(f_evolucao)
+                df_evolucao = notas_por_tags_autor(df, dt_i, dt_f, tags_selecionadas, autor)
+                # Plotar gráfico
+                df_evolucao = df_evolucao.groupby(['dt_creation'], as_index=False)['titulo'].count()
+                df_evolucao.columns = ['Data','Notas']
+                f_evolucao = alt.Chart(df_evolucao).mark_bar().encode(
+                    x='Data',
+                    y='Notas'
+                ).properties(height=500, width = 800)
+                st.write(f_evolucao)
             
+        # Geração de conteúdo no tempo ---------
+        st.header("Análise de conteúdo")
+        if st.checkbox("Quero ver criar um mapa de palavras das notas"):
+            
+            # Escolher autor
+            autores.append("Todos")
+            autor = st.selectbox("Qual o autor das notas?", options=autores)
+            st.write("Você escolheu", autor)
+
+            # Escolher Tags
+            tags_selecionadas = st.multiselect("Quais suas tags?", options=tags_clean)
+            
+            if st.button("Gerar Mapa de Palavras"):
+                df_mapa = notas_por_tags_autor(df, dt_i, dt_f, tags_selecionadas, autor)
+                tokens, str_word = token_and_str_word(df_mapa)
+                #df_qtd_palavras = pd.DataFrame(list(dict((x,tokens.count(x)) for x in set(tokens)).items()), columns = ['palavra','qtd'])
+                #st.write(df_qtd_palavras.sort_values(by='qtd', ascending=False).head(10))
+                # Generate word cloud
+                wordcloud = WordCloud(width = 700, height = 500, random_state=1, background_color='white', colormap='seismic', collocations=False, stopwords = STOPWORDS).generate(str_word)
+                st.image(wordcloud.to_array())
+            
+
 
 else:
     st.warning("Senha errada. Acesso não autorizado.")
