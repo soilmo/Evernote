@@ -7,8 +7,8 @@ import altair as alt
 import spacy
 from PIL import Image
 from wordcloud import WordCloud, STOPWORDS
-import yfinance as yf  
-
+import yfinance as yf
+import numpy as np 
 
 # Importar dataset
 url_dataset = 'https://github.com/soilmo/Evernote/blob/main/notas_historico_new.xlsx?raw=true'
@@ -31,7 +31,7 @@ def importar_tickers(url):
     return tickers, list(tickers['ticker'])
 
 # Pegar preços
-@st.cache(persist=True, max_entries = 20, ttl = 1800, show_spinner=False)
+@st.cache(persist=True, max_entries = 20, ttl = 1800, show_spinner=False, allow_output_mutation=True)
 def get_prices(ticker, dt_i, dt_f, df):
     df_ticker = yf.Ticker(ticker+str(".SA"))
 
@@ -524,32 +524,38 @@ if senha=="indie2021":
             # Ler tickers disponíveis
             tickers, lista_tickers = importar_tickers(url_tickers)
             empresa = st.selectbox("Qual empresa quer olhar?", options=lista_tickers)
-            st.write("Vc escolheu", empresa)
+            st.write("Vc escolheu", empresa, ". As linhas verticais indicam os dias das interações.")
 
             if st.button("Gerar gráfico de Preços vs Interações"):
                 df_ticker = get_prices(empresa, dt_i, dt_f, df)
-                base = alt.Chart(df_ticker).encode(x='Date')
-                line =  base.mark_line(color='red').encode(
+                source = df_ticker
+                source['base']=0
+                source['marca']=np.where(source['interacao']>0,source['Close'],0)
+                base = alt.Chart(source).encode(
+                alt.X('Date',
+                    axis=alt.Axis(
+                        format='%d/%m/%y',
+                        labelAngle=-45
+                    )
+                ))
+                rule = base.mark_rule().encode(
+                    alt.Y(
+                        'base',
+                        title='Preço',
+                        scale=alt.Scale(zero=False),
+                    ),
+                    alt.Y2("marca")
+                ).interactive()
+                line =  base.mark_line(color='blue').encode(
                     y='Close'
                 ).interactive()
-                point = base.mark_point().encode(
-                    y='Close',
-                    size='interacao'
-                ).interactive()
-                st.write((line+point).properties(height=500, width = 800))
 
-            
-  
+                st.write((rule + line).properties(height=500, width = 700).configure_axis(
+                            labelFontSize=15,
+                            titleFontSize=15
+                        ))
 
-        
 
 else:
     st.warning("Senha errada. Acesso não autorizado.")
-
-
-
-
-
-
-
 
