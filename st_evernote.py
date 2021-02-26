@@ -12,16 +12,15 @@ import numpy as np
 
 # Importar dataset
 url_dataset = 'https://github.com/soilmo/Evernote/blob/main/notas_historico_new.xlsx?raw=true'
-
-@st.cache(persist=True, max_entries = 20, ttl = 1800, show_spinner=False)
+@st.cache(show_spinner=False)
 def importar_base(url):
     df = pd.read_excel(url, usecols=['dt_creation', 'titulo', 'autor', 'tag_1', 'tag_2',
-       'tag_3', 'tag_4', 'tag_5', 'tag_6', 'texto', 'conclusao', 'pager'])
+       'tag_3', 'tag_4', 'tag_5', 'tag_6', 'tag_7', 'tag_8',
+       'tag_9', 'tag_10', 'tag_11', 'tag_12', 'texto', 'conclusao', 'pager'])
     return df
 
 # Importar tickers
 url_tickers = 'https://raw.githubusercontent.com/soilmo/Evernote/main/tickers.csv'
-
 @st.cache(persist=True, max_entries = 20, ttl = 1800, show_spinner=False)
 def importar_tickers(url):
     tickers = pd.read_csv(url)
@@ -70,8 +69,15 @@ def get_interacao(tag, dt, df_notas):
     filtro_10 = aux['tag_4']!="News"
     filtro_11 = aux['tag_5']!="News"
     filtro_12 = aux['tag_6']!="News"
+    filtro_13 = aux['tag_7']!="News"
+    filtro_14 = aux['tag_8']!="News"
+    filtro_15 = aux['tag_9']!="News"
+    filtro_16 = aux['tag_10']!="News"
+    filtro_17 = aux['tag_11']!="News"
+    filtro_18 = aux['tag_12']!="News"
 
-    aux = aux[(filtro_7)&(filtro_8)&(filtro_9)&(filtro_10)&(filtro_11)&(filtro_12)]
+    aux = aux[(filtro_7)&(filtro_8)&(filtro_9)&(filtro_10)&(filtro_11)&(filtro_12)&
+                (filtro_13)&(filtro_14)&(filtro_15)&(filtro_16)&(filtro_17)&(filtro_18)]
 
     filtro = aux['dt_creation']==dt
     try:
@@ -81,6 +87,12 @@ def get_interacao(tag, dt, df_notas):
         tag_4 = aux[filtro]['tag_4'].iloc[0]
         tag_5 = aux[filtro]['tag_5'].iloc[0]
         tag_6 = aux[filtro]['tag_6'].iloc[0]
+        tag_7 = aux[filtro]['tag_7'].iloc[0]
+        tag_8 = aux[filtro]['tag_8'].iloc[0]
+        tag_9 = aux[filtro]['tag_9'].iloc[0]
+        tag_10 = aux[filtro]['tag_10'].iloc[0]
+        tag_11 = aux[filtro]['tag_11'].iloc[0]
+        tag_12 = aux[filtro]['tag_12'].iloc[0]
 
         if (tag_1 == tag):
             interacao += 1
@@ -94,10 +106,21 @@ def get_interacao(tag, dt, df_notas):
             interacao += 1
         if (tag_6 == tag):
             interacao += 1
+        if (tag_7 == tag):
+            interacao += 1
+        if (tag_8 == tag):
+            interacao += 1
+        if (tag_9 == tag):
+            interacao += 1
+        if (tag_10 == tag):
+            interacao += 1
+        if (tag_11 == tag):
+            interacao += 1
+        if (tag_12 == tag):
+            interacao += 1
     except:
         pass
-
-            
+ 
     return interacao
 
 # Qtd de Notas por autor
@@ -111,7 +134,15 @@ def notas_por_autor(df_autor, dt_i, dt_f):
     filtro_4 = df_autor['tag_4']!="News"
     filtro_5 = df_autor['tag_5']!="News"
     filtro_6 = df_autor['tag_6']!="News"
-    df_autor = df_autor[(filtro_1)&(filtro_2)&(filtro_3)&(filtro_4)&(filtro_5)&(filtro_6)]
+    filtro_7 = df_autor['tag_7']!="News"
+    filtro_8 = df_autor['tag_8']!="News"
+    filtro_9 = df_autor['tag_9']!="News"
+    filtro_10 = df_autor['tag_10']!="News"
+    filtro_11 = df_autor['tag_11']!="News"
+    filtro_12 = df_autor['tag_12']!="News"
+
+    df_autor = df_autor[(filtro_1)&(filtro_2)&(filtro_3)&(filtro_4)&(filtro_5)&(filtro_6)&
+                        (filtro_7)&(filtro_8)&(filtro_9)&(filtro_10)&(filtro_11)&(filtro_12)]
 
     df_autor = df_autor.groupby(['autor'], as_index=False)['tag_1'].count()
     df_autor.columns = ["Autor","Quantidade"]
@@ -129,18 +160,32 @@ def notas_por_tags(df_tags, dt_i, dt_f, tags_selecionadas):
         filtro_4 = df_tags['tag_4']==tag
         filtro_5 = df_tags['tag_5']==tag
         filtro_6 = df_tags['tag_6']==tag
+        filtro_7 = df_tags['tag_7']==tag
+        filtro_8 = df_tags['tag_8']==tag
+        filtro_9 = df_tags['tag_9']==tag
+        filtro_10 = df_tags['tag_10']==tag
+        filtro_11 = df_tags['tag_11']==tag
+        filtro_12 = df_tags['tag_12']==tag
 
         # Tirar as News
-        filtro_7 = df_tags['tag_1']!="News"
-        filtro_8 = df_tags['tag_2']!="News"
-        filtro_9 = df_tags['tag_3']!="News"
-        filtro_10 = df_tags['tag_4']!="News"
-        filtro_11 = df_tags['tag_5']!="News"
-        filtro_12 = df_tags['tag_6']!="News"
+        filtro_13 = df_tags['tag_1']!="News"
+        filtro_14 = df_tags['tag_2']!="News"
+        filtro_15 = df_tags['tag_3']!="News"
+        filtro_16 = df_tags['tag_4']!="News"
+        filtro_17 = df_tags['tag_5']!="News"
+        filtro_18 = df_tags['tag_6']!="News"
+        filtro_19 = df_tags['tag_7']!="News"
+        filtro_20 = df_tags['tag_8']!="News"
+        filtro_21 = df_tags['tag_9']!="News"
+        filtro_22 = df_tags['tag_10']!="News"
+        filtro_23 = df_tags['tag_11']!="News"
+        filtro_24 = df_tags['tag_12']!="News"
 
-        df_tags = df_tags[(filtro_1)|(filtro_2)|(filtro_3)|(filtro_4)|(filtro_5)|(filtro_6)]
+        df_tags = df_tags[(filtro_1)|(filtro_2)|(filtro_3)|(filtro_4)|(filtro_5)|(filtro_6)|
+                            (filtro_7)|(filtro_8)|(filtro_9)|(filtro_10)|(filtro_11)|(filtro_12)]
         
-        df_tags = df_tags[(filtro_7)&(filtro_8)&(filtro_9)&(filtro_10)&(filtro_11)&(filtro_12)]
+        df_tags = df_tags[(filtro_13)&(filtro_14)&(filtro_15)&(filtro_16)&(filtro_17)&(filtro_18)&
+                            (filtro_19)&(filtro_20)&(filtro_21)&(filtro_22)&(filtro_23)&(filtro_24)]
 
     return df_tags
     
@@ -156,18 +201,32 @@ def notas_por_tags_autor(df_tags_autor, dt_i, dt_f, tags_selecionadas, autor):
         filtro_4 = df_tags_autor['tag_4']==tag
         filtro_5 = df_tags_autor['tag_5']==tag
         filtro_6 = df_tags_autor['tag_6']==tag
-
+        filtro_7 = df_tags_autor['tag_7']==tag
+        filtro_8 = df_tags_autor['tag_8']==tag
+        filtro_9 = df_tags_autor['tag_9']==tag
+        filtro_10 = df_tags_autor['tag_10']==tag
+        filtro_11 = df_tags_autor['tag_11']==tag
+        filtro_12 = df_tags_autor['tag_12']==tag
+        
         # Tirar as News
-        filtro_7 = df_tags_autor['tag_1']!="News"
-        filtro_8 = df_tags_autor['tag_2']!="News"
-        filtro_9 = df_tags_autor['tag_3']!="News"
-        filtro_10 = df_tags_autor['tag_4']!="News"
-        filtro_11 = df_tags_autor['tag_5']!="News"
-        filtro_12 = df_tags_autor['tag_6']!="News"
+        filtro_13 = df_tags_autor['tag_1']!="News"
+        filtro_14 = df_tags_autor['tag_2']!="News"
+        filtro_15 = df_tags_autor['tag_3']!="News"
+        filtro_16 = df_tags_autor['tag_4']!="News"
+        filtro_17 = df_tags_autor['tag_5']!="News"
+        filtro_18 = df_tags_autor['tag_6']!="News"
+        filtro_19 = df_tags_autor['tag_7']!="News"
+        filtro_20 = df_tags_autor['tag_8']!="News"
+        filtro_21 = df_tags_autor['tag_9']!="News"
+        filtro_22 = df_tags_autor['tag_10']!="News"
+        filtro_23 = df_tags_autor['tag_11']!="News"
+        filtro_24 = df_tags_autor['tag_12']!="News"
 
-        df_tags_autor = df_tags_autor[(filtro_1)|(filtro_2)|(filtro_3)|(filtro_4)|(filtro_5)|(filtro_6)]
-        df_tags_autor = df_tags_autor[(filtro_7)&(filtro_8)&(filtro_9)&(filtro_10)&(filtro_11)&(filtro_12)]
-
+        df_tags_autor = df_tags_autor[(filtro_1)|(filtro_2)|(filtro_3)|(filtro_4)|(filtro_5)|(filtro_6)|
+                            (filtro_7)|(filtro_8)|(filtro_9)|(filtro_10)|(filtro_11)|(filtro_12)]
+        
+        df_tags_autor = df_tags_autor[(filtro_13)&(filtro_14)&(filtro_15)&(filtro_16)&(filtro_17)&(filtro_18)&
+                            (filtro_19)&(filtro_20)&(filtro_21)&(filtro_22)&(filtro_23)&(filtro_24)]
     # Filtrar pelo autor
     if autor != "Todos":
         df_tags_autor = df_tags_autor[df_tags_autor['autor']==autor]
@@ -178,7 +237,7 @@ def notas_por_tags_autor(df_tags_autor, dt_i, dt_f, tags_selecionadas, autor):
 @st.cache(persist=True, max_entries = 20, ttl = 1800, show_spinner=False)
 def lista_tags_clean(df):
 
-    tags = list(df['tag_1'].append(df['tag_2']).append(df['tag_3']).append(df['tag_4']).append(df['tag_5']).append(df['tag_6']).unique())
+    tags = list(df['tag_1'].append(df['tag_2']).append(df['tag_3']).append(df['tag_4']).append(df['tag_5']).append(df['tag_6']).append(df['tag_7']).append(df['tag_8']).append(df['tag_9']).append(df['tag_10']).append(df['tag_11']).append(df['tag_12']).unique())
     tags_clean = []
     for i in tags:
         try:
@@ -186,14 +245,18 @@ def lista_tags_clean(df):
                 tags_clean.append(i)
         except:
             pass
-        
     for i in tags:
         try:
             if i[0]=="@":
                 tags_clean.append(i)
         except:
             pass
-
+    for i in tags:
+        try:
+            if i[0]=="#":
+                tags_clean.append(i)
+        except:
+            pass
     for i in tags:
         try:
             if i=="News" or i=="Participants" or i == "Management" or i == "ESG":
@@ -205,7 +268,8 @@ def lista_tags_clean(df):
 # Lista com tags setoriais
 @st.cache(persist=True, max_entries = 20, ttl = 1800, show_spinner=False)
 def lista_tags_setoriais(df):
-    tags = list(df['tag_1'].append(df['tag_2']).append(df['tag_3']).append(df['tag_4']).append(df['tag_5']).append(df['tag_6']).unique())
+    tags = list(df['tag_1'].append(df['tag_2']).append(df['tag_3']).append(df['tag_4']).append(df['tag_5']).append(df['tag_6']).append(df['tag_7']).append(df['tag_8']).append(df['tag_9']).append(df['tag_10']).append(df['tag_11']).append(df['tag_12']).unique())
+    
     tags_setores = []
     for i in tags:
         try:
@@ -218,7 +282,8 @@ def lista_tags_setoriais(df):
 # Lista com tags empresas
 @st.cache(persist=True, max_entries = 20, ttl = 1800, show_spinner=False)
 def lista_tags_empresas(df):
-    tags = list(df['tag_1'].append(df['tag_2']).append(df['tag_3']).append(df['tag_4']).append(df['tag_5']).append(df['tag_6']).unique())
+    tags = list(df['tag_1'].append(df['tag_2']).append(df['tag_3']).append(df['tag_4']).append(df['tag_5']).append(df['tag_6']).append(df['tag_7']).append(df['tag_8']).append(df['tag_9']).append(df['tag_10']).append(df['tag_11']).append(df['tag_12']).unique())
+    
     tags_empresas = []
     for i in tags:
         try:
@@ -312,14 +377,13 @@ def token_and_str_word(df):
 st.title("Análises das notas do Evernote")
 st.header("Digite a senha para ter acesso às análises")
 senha = st.text_input("Senha","Digite aqui")
-#if st.button("Ter acesso"):
 if senha=="indie2021":
     senha = senha.title()
     st.success("Acesso autorizado.")
     # Funcionalidades ------------------------
-    
     # Período de análise
     st.header("Período de análise")
+    
     dt_i = st.date_input("Qual o dia inicial do período?", datetime.datetime.now())
     dt_i = dt_i.strftime('%Y-%m-%d')
     st.write("A data inicial é",dt_i)
@@ -331,7 +395,7 @@ if senha=="indie2021":
     if st.checkbox("Disponibilizar análises para esse período"):
         # Importar base
         df = importar_base(url_dataset)
-        
+
         filtro_1 = df['dt_creation']>=dt_i
         filtro_2 = df['dt_creation']<=dt_f
         df = df[(filtro_1) & (filtro_2)]
@@ -354,11 +418,10 @@ if senha=="indie2021":
             st.success("Temos " + str(df_autor['Quantidade'].sum())+ " notas")
             st.write(df_autor.sort_values(by='Quantidade',ascending = False))
 
-
         # Qtd de Notas por tag ----------
         st.header("Notas por Tag")
 
-        if st.checkbox("Quero ver a quantidade de notas com tags específicas em dado período"):
+        if st.checkbox("Ver a quantidade de notas com tags específicas em dado período"):
             
             # Escolher tags
             tags_selecionadas = st.multiselect("Quais tags quer?", options=tags_clean)
@@ -366,13 +429,13 @@ if senha=="indie2021":
             if st.button("Ver notas por tag"):
                 df_tags = notas_por_tags(df, dt_i, dt_f, tags_selecionadas)
                 st.success("Temos " + str(df_tags.shape[0])+ " notas com essas tags simultaneamente.")
-                st.write(df_tags[['titulo','dt_creation','autor']])
+                st.write(df_tags[['titulo','autor']])
 
         # Qtd de Notas por autor e por tag ----------
 
         st.header("Notas por Tag e Autor")
 
-        if st.checkbox("Quero ver a quantidade de notas com tags específicas em dado período e de um determinado autor"):
+        if st.checkbox("Ver a quantidade de notas com tags específicas em dado período e de um determinado autor"):
             
             # Escolher autor
             autor = st.selectbox("Escolha um autor", options=autores)
@@ -383,13 +446,13 @@ if senha=="indie2021":
             if st.button("Ver notas por tags e autor"):
                 df_tags_autor = notas_por_tags_autor(df, dt_i, dt_f, tags_selecionadas, autor)
                 st.success("Temos " + str(df_tags_autor.shape[0])+ " notas com essas tags simultaneamente feitas por " + str(autor))
-                st.write(df_tags_autor[['titulo','dt_creation']])
+                st.write(df_tags_autor[['titulo']])
 
         # Graf Barras Ranking Tags das Empresas ---------
 
         st.header("Ranking das Tags de Empresas")
 
-        if st.checkbox("Quero ver as tags de empresas mais comentadas"):
+        if st.checkbox("Ver as tags de empresas mais comentadas"):
             
             # Quantidade de empresas
             m = st.slider("Selecione a quantidade de empresas a mostrar",1,20)
@@ -402,7 +465,7 @@ if senha=="indie2021":
 
             for i in tags_empresas:
                 qtd = 0
-                qtd = df_rnk_empresa[df_rnk_empresa['tag_1']==i].shape[0]+df_rnk_empresa[df_rnk_empresa['tag_2']==i].shape[0]+df_rnk_empresa[df_rnk_empresa['tag_3']==i].shape[0]+df_rnk_empresa[df_rnk_empresa['tag_4']==i].shape[0]+df_rnk_empresa[df_rnk_empresa['tag_5']==i].shape[0]+df_rnk_empresa[df_rnk_empresa['tag_6']==i].shape[0]
+                qtd = df_rnk_empresa[df_rnk_empresa['tag_1']==i].shape[0]+df_rnk_empresa[df_rnk_empresa['tag_2']==i].shape[0]+df_rnk_empresa[df_rnk_empresa['tag_3']==i].shape[0]+df_rnk_empresa[df_rnk_empresa['tag_4']==i].shape[0]+df_rnk_empresa[df_rnk_empresa['tag_5']==i].shape[0]+df_rnk_empresa[df_rnk_empresa['tag_6']==i].shape[0]+df_rnk_empresa[df_rnk_empresa['tag_7']==i].shape[0]+df_rnk_empresa[df_rnk_empresa['tag_8']==i].shape[0]+df_rnk_empresa[df_rnk_empresa['tag_9']==i].shape[0]+df_rnk_empresa[df_rnk_empresa['tag_10']==i].shape[0]+df_rnk_empresa[df_rnk_empresa['tag_11']==i].shape[0]+df_rnk_empresa[df_rnk_empresa['tag_12']==i].shape[0]
                 aux = pd.DataFrame({
                         'empresa':i,
                         'qtd':qtd
@@ -429,8 +492,7 @@ if senha=="indie2021":
                 )
                 f_empresas = (bars + text).properties(height=50*m+30, width = 700)
                 st.write(f_empresas)
-                
-
+             
         # Graf Barras Ranking Tags das Setores ---------
         st.header("Ranking das Tags de Setores")
 
@@ -445,7 +507,7 @@ if senha=="indie2021":
 
             for i in tags_setores:
                 qtd = 0
-                qtd = df_rnk_setor[df_rnk_setor['tag_1']==i].shape[0]+df_rnk_setor[df_rnk_setor['tag_2']==i].shape[0]+df_rnk_setor[df_rnk_setor['tag_3']==i].shape[0]+df_rnk_setor[df_rnk_setor['tag_4']==i].shape[0]+df_rnk_setor[df_rnk_setor['tag_5']==i].shape[0]+df_rnk_setor[df_rnk_setor['tag_6']==i].shape[0]
+                qtd = df_rnk_setor[df_rnk_setor['tag_1']==i].shape[0]+df_rnk_setor[df_rnk_setor['tag_2']==i].shape[0]+df_rnk_setor[df_rnk_setor['tag_3']==i].shape[0]+df_rnk_setor[df_rnk_setor['tag_4']==i].shape[0]+df_rnk_setor[df_rnk_setor['tag_5']==i].shape[0]+df_rnk_setor[df_rnk_setor['tag_6']==i].shape[0]+df_rnk_setor[df_rnk_setor['tag_7']==i].shape[0]+df_rnk_setor[df_rnk_setor['tag_8']==i].shape[0]+df_rnk_setor[df_rnk_setor['tag_9']==i].shape[0]+df_rnk_setor[df_rnk_setor['tag_10']==i].shape[0]+df_rnk_setor[df_rnk_setor['tag_11']==i].shape[0]+df_rnk_setor[df_rnk_setor['tag_12']==i].shape[0]
                 aux = pd.DataFrame({
                         'setor':i,
                         'qtd':qtd
@@ -477,7 +539,7 @@ if senha=="indie2021":
         # Geração de conteúdo no tempo ---------
         st.header("Geração de notas ao longo do tempo")
 
-        if st.checkbox("Quero ver a evolução de criação de notas"):
+        if st.checkbox("Ver a evolução de criação de notas"):
             
             # Escolher autor
             autores.append("Todos")
@@ -494,14 +556,17 @@ if senha=="indie2021":
                 df_evolucao = df_evolucao.groupby(['dt_creation'], as_index=False)['titulo'].count()
                 df_evolucao.columns = ['Data','Notas']
                 f_evolucao = alt.Chart(df_evolucao).mark_bar().encode(
-                    x='Data',
-                    y='Notas'
-                ).properties(height=500, width = 800)
+                    alt.X('Data', axis=alt.Axis(
+                        format='%d/%m/%y',
+                        labelAngle=-45
+                    )),
+                    alt.Y('Notas')
+                ).properties(height=500, width = 700)
                 st.write(f_evolucao)
             
         # Mapa de palavras ---------
         st.header("Análise de conteúdo")
-        if st.checkbox("Quero ver criar um mapa de palavras das notas"):
+        if st.checkbox("Criar um mapa de palavras das notas"):
             
             # Escolher autor
             autores.append("Todos")
@@ -520,7 +585,7 @@ if senha=="indie2021":
 
         # Preços vs interação ---------
         st.header("Preços vs Interações")
-        if st.checkbox("Quero ver as interações ao longo do Price Action"):
+        if st.checkbox("Ver as interações ao longo do Price Action"):
             # Ler tickers disponíveis
             tickers, lista_tickers = importar_tickers(url_tickers)
             empresa = st.selectbox("Qual empresa quer olhar?", options=lista_tickers)
