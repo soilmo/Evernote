@@ -31,29 +31,29 @@ def importar_tickers(url):
 
 # Pegar preços
 @st.cache(persist=True, max_entries = 20, ttl = 1800, show_spinner=False, allow_output_mutation=True)
-def get_prices(ticker, dt_i, dt_f, df):
-    df_ticker = yf.Ticker(ticker+str(".SA"))
+def get_prices(ticker, dt_i, dt_f, df, tickers):
+    aux = yf.Ticker(ticker+str(".SA"))
 
     #get the historical prices for this ticker
-    df_ticker = df_ticker.history(period='1d', start=dt_i, end=dt_f)
-    df_ticker=df_ticker.reset_index()
-    df_ticker['ticker']=ticker
+    aux = aux.history(period='1d', start=dt_i, end=dt_f)
+    aux = aux.reset_index()
+    aux['ticker']=ticker
 
-    df_ticker = df_ticker[['Date','ticker',"Close"]]
-    df_ticker['interacao']=0
+    aux = aux[['Date','ticker',"Close"]]
+    aux['interacao']=0
 
-    for i in range(0,df_ticker.shape[0]):
+    for i in range(0,aux.shape[0]):
         
-        ticker = df_ticker.iloc[i,1]
-        dt = df_ticker.iloc[i,0]
+        ticker = aux.iloc[i,1]
+        dt = aux.iloc[i,0]
         tag = tickers[tickers['ticker']==ticker]['tag'].iloc[0]
         interacao = get_interacao(tag, dt, df)
         if interacao > 0:
             print(ticker, dt, tag, interacao)
         
-        df_ticker.iloc[i,3]=interacao
+        aux.iloc[i,3]=interacao
 
-    return df_ticker
+    return aux
 
 # Contar interações
 @st.cache(persist=True, max_entries = 20, ttl = 1800, show_spinner=False)
@@ -584,19 +584,20 @@ if senha=="indie2021":
                 st.image(wordcloud.to_array())
 
         # Preços vs interação ---------
-        st.header("Preços vs Interações")
+        '''st.header("Preços vs Interações")
         if st.checkbox("Ver as interações ao longo do Price Action"):
             # Ler tickers disponíveis
             tickers, lista_tickers = importar_tickers(url_tickers)
             empresa = st.selectbox("Qual empresa quer olhar?", options=lista_tickers)
-            st.write("Vc escolheu", empresa, ". As linhas verticais indicam os dias das interações.")
+            st.write("Você escolheu", empresa, ". As linhas verticais indicam os dias das interações.")
 
             if st.button("Gerar gráfico de Preços vs Interações"):
-                df_ticker = get_prices(empresa, dt_i, dt_f, df)
-                source = df_ticker
-                source['base']=0
-                source['marca']=np.where(source['interacao']>0,source['Close'],0)
-                base = alt.Chart(source).encode(
+                df_ticker = get_prices(empresa, dt_i, dt_f, df, tickers)
+                #st.write(df_ticker)
+                df_ticker['base']=0
+                df_ticker['marca']=np.where(df_ticker['interacao']>0,df_ticker['Close'],0)
+                #st.write(df_ticker)
+                base = alt.Chart(df_ticker).encode(
                 alt.X('Date',
                     axis=alt.Axis(
                         format='%d/%m/%y',
@@ -611,7 +612,7 @@ if senha=="indie2021":
                     ),
                     alt.Y2("marca")
                 ).interactive()
-                line =  base.mark_line(color='blue').encode(
+                line =  base.mark_line(color='blue', point = True).encode(
                     y='Close'
                 ).interactive()
 
@@ -619,7 +620,7 @@ if senha=="indie2021":
                             labelFontSize=15,
                             titleFontSize=15
                         ))
-
+'''
 
 else:
     st.warning("Senha errada. Acesso não autorizado.")
