@@ -144,7 +144,7 @@ def notas_por_autor(df_autor, dt_i, dt_f):
     df_autor = df_autor[(filtro_1)&(filtro_2)&(filtro_3)&(filtro_4)&(filtro_5)&(filtro_6)&
                         (filtro_7)&(filtro_8)&(filtro_9)&(filtro_10)&(filtro_11)&(filtro_12)]
 
-    df_autor = df_autor.groupby(['autor'], as_index=False)['tag_1'].count()
+    df_autor = df_autor.groupby(['autor'], as_index=False)['df_creation'].count()
     df_autor.columns = ["Autor","Quantidade"]
     
     return df_autor
@@ -582,7 +582,6 @@ if senha=="indie2021":
                 # Generate word cloud
                 wordcloud = WordCloud(width = 700, height = 500, random_state=1, background_color='white', colormap='seismic', collocations=False, stopwords = STOPWORDS).generate(str_word)
                 st.image(wordcloud.to_array())
-
         # Preços vs interação ---------
         '''st.header("Preços vs Interações")
         if st.checkbox("Ver as interações ao longo do Price Action"):
@@ -621,7 +620,6 @@ if senha=="indie2021":
                             titleFontSize=15
                         ))
 '''
-
 else:
     st.warning("Senha errada. Acesso não autorizado.")
 
