@@ -19,6 +19,13 @@ def importar_base(url):
        'tag_9', 'tag_10', 'tag_11', 'tag_12', 'texto', 'conclusao', 'pager'])
     return df
 
+# Importar hyperlinks
+url_hyperlinks = 'https://github.com/soilmo/Evernote/blob/main/hyperlinks.xlsx?raw=true'
+@st.cache(show_spinner=False)
+def importar_hyperlinks(url):
+    df = pd.read_excel(url)
+    return df
+
 # Importar tickers
 url_tickers = 'https://raw.githubusercontent.com/soilmo/Evernote/main/tickers.csv'
 @st.cache(persist=True, max_entries = 20, ttl = 1800, show_spinner=False)
@@ -144,7 +151,7 @@ def notas_por_autor(df_autor, dt_i, dt_f):
     df_autor = df_autor[(filtro_1)&(filtro_2)&(filtro_3)&(filtro_4)&(filtro_5)&(filtro_6)&
                         (filtro_7)&(filtro_8)&(filtro_9)&(filtro_10)&(filtro_11)&(filtro_12)]
 
-    df_autor = df_autor.groupby(['autor'], as_index=False)['df_creation'].count()
+    df_autor = df_autor.groupby(['autor'], as_index=False)['dt_creation'].count()
     df_autor.columns = ["Autor","Quantidade"]
     
     return df_autor
@@ -152,6 +159,23 @@ def notas_por_autor(df_autor, dt_i, dt_f):
 # Notas por tags
 @st.cache(persist=True, max_entries = 20, ttl = 1800, show_spinner=False)
 def notas_por_tags(df_tags, dt_i, dt_f, tags_selecionadas):
+
+    # Tirar as News
+    filtro_13 = df_tags['tag_1']!="News"
+    filtro_14 = df_tags['tag_2']!="News"
+    filtro_15 = df_tags['tag_3']!="News"
+    filtro_16 = df_tags['tag_4']!="News"
+    filtro_17 = df_tags['tag_5']!="News"
+    filtro_18 = df_tags['tag_6']!="News"
+    filtro_19 = df_tags['tag_7']!="News"
+    filtro_20 = df_tags['tag_8']!="News"
+    filtro_21 = df_tags['tag_9']!="News"
+    filtro_22 = df_tags['tag_10']!="News"
+    filtro_23 = df_tags['tag_11']!="News"
+    filtro_24 = df_tags['tag_12']!="News"
+
+    df_tags = df_tags[(filtro_13)&(filtro_14)&(filtro_15)&(filtro_16)&(filtro_17)&(filtro_18)&
+                        (filtro_19)&(filtro_20)&(filtro_21)&(filtro_22)&(filtro_23)&(filtro_24)]
     
     for tag in tags_selecionadas:
         filtro_1 = df_tags['tag_1']==tag
@@ -167,26 +191,9 @@ def notas_por_tags(df_tags, dt_i, dt_f, tags_selecionadas):
         filtro_11 = df_tags['tag_11']==tag
         filtro_12 = df_tags['tag_12']==tag
 
-        # Tirar as News
-        filtro_13 = df_tags['tag_1']!="News"
-        filtro_14 = df_tags['tag_2']!="News"
-        filtro_15 = df_tags['tag_3']!="News"
-        filtro_16 = df_tags['tag_4']!="News"
-        filtro_17 = df_tags['tag_5']!="News"
-        filtro_18 = df_tags['tag_6']!="News"
-        filtro_19 = df_tags['tag_7']!="News"
-        filtro_20 = df_tags['tag_8']!="News"
-        filtro_21 = df_tags['tag_9']!="News"
-        filtro_22 = df_tags['tag_10']!="News"
-        filtro_23 = df_tags['tag_11']!="News"
-        filtro_24 = df_tags['tag_12']!="News"
-
         df_tags = df_tags[(filtro_1)|(filtro_2)|(filtro_3)|(filtro_4)|(filtro_5)|(filtro_6)|
                             (filtro_7)|(filtro_8)|(filtro_9)|(filtro_10)|(filtro_11)|(filtro_12)]
-        
-        df_tags = df_tags[(filtro_13)&(filtro_14)&(filtro_15)&(filtro_16)&(filtro_17)&(filtro_18)&
-                            (filtro_19)&(filtro_20)&(filtro_21)&(filtro_22)&(filtro_23)&(filtro_24)]
-
+    
     return df_tags
     
 # Notas por tags
@@ -208,30 +215,94 @@ def notas_por_tags_autor(df_tags_autor, dt_i, dt_f, tags_selecionadas, autor):
         filtro_11 = df_tags_autor['tag_11']==tag
         filtro_12 = df_tags_autor['tag_12']==tag
         
-        # Tirar as News
-        filtro_13 = df_tags_autor['tag_1']!="News"
-        filtro_14 = df_tags_autor['tag_2']!="News"
-        filtro_15 = df_tags_autor['tag_3']!="News"
-        filtro_16 = df_tags_autor['tag_4']!="News"
-        filtro_17 = df_tags_autor['tag_5']!="News"
-        filtro_18 = df_tags_autor['tag_6']!="News"
-        filtro_19 = df_tags_autor['tag_7']!="News"
-        filtro_20 = df_tags_autor['tag_8']!="News"
-        filtro_21 = df_tags_autor['tag_9']!="News"
-        filtro_22 = df_tags_autor['tag_10']!="News"
-        filtro_23 = df_tags_autor['tag_11']!="News"
-        filtro_24 = df_tags_autor['tag_12']!="News"
-
         df_tags_autor = df_tags_autor[(filtro_1)|(filtro_2)|(filtro_3)|(filtro_4)|(filtro_5)|(filtro_6)|
                             (filtro_7)|(filtro_8)|(filtro_9)|(filtro_10)|(filtro_11)|(filtro_12)]
         
-        df_tags_autor = df_tags_autor[(filtro_13)&(filtro_14)&(filtro_15)&(filtro_16)&(filtro_17)&(filtro_18)&
-                            (filtro_19)&(filtro_20)&(filtro_21)&(filtro_22)&(filtro_23)&(filtro_24)]
+    # Tirar as News
+    filtro_13 = df_tags_autor['tag_1']!="News"
+    filtro_14 = df_tags_autor['tag_2']!="News"
+    filtro_15 = df_tags_autor['tag_3']!="News"
+    filtro_16 = df_tags_autor['tag_4']!="News"
+    filtro_17 = df_tags_autor['tag_5']!="News"
+    filtro_18 = df_tags_autor['tag_6']!="News"
+    filtro_19 = df_tags_autor['tag_7']!="News"
+    filtro_20 = df_tags_autor['tag_8']!="News"
+    filtro_21 = df_tags_autor['tag_9']!="News"
+    filtro_22 = df_tags_autor['tag_10']!="News"
+    filtro_23 = df_tags_autor['tag_11']!="News"
+    filtro_24 = df_tags_autor['tag_12']!="News"
+
+    
+    df_tags_autor = df_tags_autor[(filtro_13)&(filtro_14)&(filtro_15)&(filtro_16)&(filtro_17)&(filtro_18)&
+                        (filtro_19)&(filtro_20)&(filtro_21)&(filtro_22)&(filtro_23)&(filtro_24)]
+    
     # Filtrar pelo autor
     if autor != "Todos":
         df_tags_autor = df_tags_autor[df_tags_autor['autor']==autor]
 
     return df_tags_autor
+
+# Noticias por tags
+@st.cache(persist=True, max_entries = 20, ttl = 1800, show_spinner=False)
+def noticias_por_tags(df_tags, dt_i, dt_f, tags_selecionadas):
+    # Deixar as News
+    filtro_13 = df_tags['tag_1']=="News"
+    filtro_14 = df_tags['tag_2']=="News"
+    filtro_15 = df_tags['tag_3']=="News"
+    filtro_16 = df_tags['tag_4']=="News"
+    filtro_17 = df_tags['tag_5']=="News"
+    filtro_18 = df_tags['tag_6']=="News"
+    filtro_19 = df_tags['tag_7']=="News"
+    filtro_20 = df_tags['tag_8']=="News"
+    filtro_21 = df_tags['tag_9']=="News"
+    filtro_22 = df_tags['tag_10']=="News"
+    filtro_23 = df_tags['tag_11']=="News"
+    filtro_24 = df_tags['tag_12']=="News"
+    
+    df_tags = df_tags[(filtro_13)|(filtro_14)|(filtro_15)|(filtro_16)|(filtro_17)|(filtro_18)|
+                        (filtro_19)|(filtro_20)|(filtro_21)|(filtro_22)|(filtro_23)|(filtro_24)]
+
+    for tag in tags_selecionadas:
+        filtro_1 = df_tags['tag_1']==tag
+        filtro_2 = df_tags['tag_2']==tag
+        filtro_3 = df_tags['tag_3']==tag
+        filtro_4 = df_tags['tag_4']==tag
+        filtro_5 = df_tags['tag_5']==tag
+        filtro_6 = df_tags['tag_6']==tag
+        filtro_7 = df_tags['tag_7']==tag
+        filtro_8 = df_tags['tag_8']==tag
+        filtro_9 = df_tags['tag_9']==tag
+        filtro_10 = df_tags['tag_10']==tag
+        filtro_11 = df_tags['tag_11']==tag
+        filtro_12 = df_tags['tag_12']==tag
+
+        df_tags = df_tags[(filtro_1)|(filtro_2)|(filtro_3)|(filtro_4)|(filtro_5)|(filtro_6)|
+                            (filtro_7)|(filtro_8)|(filtro_9)|(filtro_10)|(filtro_11)|(filtro_12)]
+    return df_tags
+
+# Six pagers
+@st.cache(persist=True, max_entries = 20, ttl = 1800, show_spinner=False)
+def pagers(df,dt_i,dt_f, tags_selecionadas):
+    filtro = df['pager']==1
+    df = df[filtro]
+
+    for tag in tags_selecionadas:
+        filtro_1 = df['tag_1']==tag
+        filtro_2 = df['tag_2']==tag
+        filtro_3 = df['tag_3']==tag
+        filtro_4 = df['tag_4']==tag
+        filtro_5 = df['tag_5']==tag
+        filtro_6 = df['tag_6']==tag
+        filtro_7 = df['tag_7']==tag
+        filtro_8 = df['tag_8']==tag
+        filtro_9 = df['tag_9']==tag
+        filtro_10 = df['tag_10']==tag
+        filtro_11 = df['tag_11']==tag
+        filtro_12 = df['tag_12']==tag
+
+        df = df[(filtro_1)|(filtro_2)|(filtro_3)|(filtro_4)|(filtro_5)|(filtro_6)|
+                            (filtro_7)|(filtro_8)|(filtro_9)|(filtro_10)|(filtro_11)|(filtro_12)]
+    return df
 
 # Criar lista com tags
 @st.cache(persist=True, max_entries = 20, ttl = 1800, show_spinner=False)
@@ -371,6 +442,15 @@ def token_and_str_word(df):
     
     return tokens, str_word
 
+# Pegar hyperlink
+@st.cache(persist=True, max_entries = 20, ttl = 1800, show_spinner=False)
+def get_hyperlink(titulo, df_hyperlinks):
+    filtro = df_hyperlinks['titulo']==titulo
+    try:
+        link = df_hyperlinks[filtro].iloc[0,1]
+    except:
+        link = 'NA'
+    return link
 # -----------------------------------------------------------
 
 # Title
@@ -396,6 +476,9 @@ if senha=="indie2021":
         # Importar base
         df = importar_base(url_dataset)
 
+        # Importar hyperlinks
+        df_hyperlinks = importar_hyperlinks(url_hyperlinks)
+
         filtro_1 = df['dt_creation']>=dt_i
         filtro_2 = df['dt_creation']<=dt_f
         df = df[(filtro_1) & (filtro_2)]
@@ -410,17 +493,15 @@ if senha=="indie2021":
 
         # Qtd de Notas por autor -------
         st.header("Notas por autor")
-
         if st.checkbox("Quero ver a quantidade de notas que cada analista fez em dado período"):
             
             df_autor = notas_por_autor(df,dt_i,dt_f)
             
             st.success("Temos " + str(df_autor['Quantidade'].sum())+ " notas")
             st.write(df_autor.sort_values(by='Quantidade',ascending = False))
-
+            
         # Qtd de Notas por tag ----------
         st.header("Notas por Tag")
-
         if st.checkbox("Ver a quantidade de notas com tags específicas em dado período"):
             
             # Escolher tags
@@ -429,12 +510,13 @@ if senha=="indie2021":
             if st.button("Ver notas por tag"):
                 df_tags = notas_por_tags(df, dt_i, dt_f, tags_selecionadas)
                 st.success("Temos " + str(df_tags.shape[0])+ " notas com essas tags simultaneamente.")
-                st.write(df_tags[['titulo','autor']])
-
+                for t in df_tags['titulo']:
+                    url_link = get_hyperlink(t, df_hyperlinks)
+                    link = f'[{t}]({url_link})'
+                    st.markdown(link, unsafe_allow_html=True)
+                
         # Qtd de Notas por autor e por tag ----------
-
         st.header("Notas por Tag e Autor")
-
         if st.checkbox("Ver a quantidade de notas com tags específicas em dado período e de um determinado autor"):
             
             # Escolher autor
@@ -446,12 +528,42 @@ if senha=="indie2021":
             if st.button("Ver notas por tags e autor"):
                 df_tags_autor = notas_por_tags_autor(df, dt_i, dt_f, tags_selecionadas, autor)
                 st.success("Temos " + str(df_tags_autor.shape[0])+ " notas com essas tags simultaneamente feitas por " + str(autor))
-                st.write(df_tags_autor[['titulo']])
-
+                for t in df_tags_autor['titulo']:
+                    url_link = get_hyperlink(t, df_hyperlinks)
+                    link = f'[{t}]({url_link})'
+                    st.markdown(link, unsafe_allow_html=True)
+                
+        # Notícias que valem a leitura ----------
+        st.header("Notícias que valem a leitura")
+        if st.checkbox("Ver as notícias do período escolhido"):
+            
+            # Escolher tags
+            tags_selecionadas = st.multiselect("Marque as tags de interesse. Caso queira todas, não escolha nenhuma.", options=tags_clean)
+            
+            if st.button("Ver notícias"):
+                df_noticias = noticias_por_tags(df, dt_i, dt_f, tags_selecionadas)
+                st.success("Temos " + str(df_noticias.shape[0])+ " notícias com essas tags.")
+                for t in df_noticias['titulo']:
+                    url_link = get_hyperlink(t, df_hyperlinks)
+                    link = f'[{t}]({url_link})'
+                    st.markdown(link, unsafe_allow_html=True)
+                
+        # Six pagers da semana
+        st.header("Six Pagers")
+        if st.checkbox("Verificar os six pagers do período"):
+            # Escolher tags
+            tags_selecionadas = st.multiselect("Escolha as tags. Caso queira todas, não escolha nenhuma.", options=tags_clean)
+            
+            if st.button("Ver six pagers"):
+                df_pagers = pagers(df,dt_i,dt_f, tags_selecionadas)
+                st.success("Temos " + str(df_pagers.shape[0])+ " pagers nesse período")
+                for t in df_pagers['titulo']:
+                    url_link = get_hyperlink(t, df_hyperlinks)
+                    link = f'[{t}]({url_link})'
+                    st.markdown(link, unsafe_allow_html=True)
+                
         # Graf Barras Ranking Tags das Empresas ---------
-
         st.header("Ranking das Tags de Empresas")
-
         if st.checkbox("Ver as tags de empresas mais comentadas"):
             
             # Quantidade de empresas
@@ -495,7 +607,6 @@ if senha=="indie2021":
              
         # Graf Barras Ranking Tags das Setores ---------
         st.header("Ranking das Tags de Setores")
-
         if st.checkbox("Quero ver as tags de setores mais comentadas"):
             
             df_rnk_setor = df
@@ -538,7 +649,6 @@ if senha=="indie2021":
 
         # Geração de conteúdo no tempo ---------
         st.header("Geração de notas ao longo do tempo")
-
         if st.checkbox("Ver a evolução de criação de notas"):
             
             # Escolher autor
@@ -582,44 +692,60 @@ if senha=="indie2021":
                 # Generate word cloud
                 wordcloud = WordCloud(width = 700, height = 500, random_state=1, background_color='white', colormap='seismic', collocations=False, stopwords = STOPWORDS).generate(str_word)
                 st.image(wordcloud.to_array())
+        
         # Preços vs interação ---------
-        '''st.header("Preços vs Interações")
-        if st.checkbox("Ver as interações ao longo do Price Action"):
+        #st.header("Preços vs Interações")
+        #if st.checkbox("Ver as interações ao longo do Price Action"):
             # Ler tickers disponíveis
-            tickers, lista_tickers = importar_tickers(url_tickers)
-            empresa = st.selectbox("Qual empresa quer olhar?", options=lista_tickers)
-            st.write("Você escolheu", empresa, ". As linhas verticais indicam os dias das interações.")
+        #    tickers, lista_tickers = importar_tickers(url_tickers)
+        #    empresa = st.selectbox("Qual empresa quer olhar?", options=lista_tickers)
+        #    st.write("Você escolheu", empresa, ". As linhas verticais indicam os dias das interações.")
 
-            if st.button("Gerar gráfico de Preços vs Interações"):
-                df_ticker = get_prices(empresa, dt_i, dt_f, df, tickers)
-                #st.write(df_ticker)
-                df_ticker['base']=0
-                df_ticker['marca']=np.where(df_ticker['interacao']>0,df_ticker['Close'],0)
-                #st.write(df_ticker)
-                base = alt.Chart(df_ticker).encode(
-                alt.X('Date',
-                    axis=alt.Axis(
-                        format='%d/%m/%y',
-                        labelAngle=-45
-                    )
-                ))
-                rule = base.mark_rule().encode(
-                    alt.Y(
-                        'base',
-                        title='Preço',
-                        scale=alt.Scale(zero=False),
-                    ),
-                    alt.Y2("marca")
-                ).interactive()
-                line =  base.mark_line(color='blue', point = True).encode(
-                    y='Close'
-                ).interactive()
+        #    if st.button("Gerar gráfico de Preços vs Interações"):
+        #        df_ticker = get_prices(empresa, dt_i, dt_f, df, tickers)
+        #        st.write(df_ticker.tail())
+        #        df_ticker['base']=0
+        #        df_ticker['marca']=np.where(df_ticker['interacao']>0,df_ticker['Close'],0)
+        #        st.write(df_ticker.tail())
+        #        base = alt.Chart(df_ticker).encode(
+        #        alt.X('Date',
+        #            axis=alt.Axis(
+        #                format='%d/%m/%y',
+        #                labelAngle=-45
+        #            )
+        #        ))
+        #        rule = base.mark_rule().encode(
+        #            alt.Y(
+        #                'base',
+        #                title='Preço',
+        #                scale=alt.Scale(zero=False),
+        #            ),
+        #            alt.Y2("marca")
+        #        ).interactive()
 
-                st.write((rule + line).properties(height=500, width = 700).configure_axis(
-                            labelFontSize=15,
-                            titleFontSize=15
-                        ))
-'''
+        #        line =  base.mark_line(color='blue').encode(
+        #            y='Close'
+        #        ).interactive()
+
+        #        points = base.mark_point().encode(
+        #            y='Close'
+        #        ).interactive()
+
+        #        text = points.mark_text(
+        #            align='center',
+        #            baseline='middle',
+        #            dx=7,
+        #            fontSize = 15
+        #        ).encode(
+        #            text='Close'
+        #        )
+
+        #        st.write((rule + line + text).properties(height=500, width = 700).configure_axis(
+        #                    labelFontSize=15,
+        #                    titleFontSize=15
+        #                ))
+                # "Clean" o dataframe
+        #        df_ticker = 0
 else:
     st.warning("Senha errada. Acesso não autorizado.")
 
