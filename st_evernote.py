@@ -8,7 +8,7 @@ import spacy
 from PIL import Image
 from wordcloud import WordCloud, STOPWORDS
 import yfinance as yf
-import numpy as np 
+import numpy as np
 
 # Importar dataset
 url_dataset = 'https://github.com/soilmo/Evernote/blob/main/notas_historico_new.xlsx?raw=true'
@@ -454,9 +454,8 @@ def get_hyperlink(titulo, df_hyperlinks):
 # -----------------------------------------------------------
 
 # Title
-st.title("Análises das notas do Evernote")
-st.header("Digite a senha para ter acesso às análises")
-senha = st.text_input("Senha","Digite aqui")
+st.title("Análises Evernote")
+senha = st.text_input("Senha","Digite a senha")
 if senha=="indie2021":
     senha = senha.title()
     st.success("Acesso autorizado.")
@@ -464,288 +463,262 @@ if senha=="indie2021":
     # Período de análise
     st.header("Período de análise")
     
-    dt_i = st.date_input("Qual o dia inicial do período?", datetime.datetime.now())
+    dt_i = st.date_input("Qual o dia inicial?", datetime.datetime.now())
     dt_i = dt_i.strftime('%Y-%m-%d')
-    st.write("A data inicial é",dt_i)
-
-    dt_f = st.date_input("Qual o dia final do período?", datetime.datetime.now())
+    
+    dt_f = st.date_input("Qual o dia final?", datetime.datetime.now())
     dt_f = dt_f.strftime('%Y-%m-%d')
-    st.write("A data final é",dt_f)
 
-    if st.checkbox("Disponibilizar análises para esse período"):
-        # Importar base
-        df = importar_base(url_dataset)
+    #if st.checkbox("Ver análises do período"):
+    # Importar base
+    df = importar_base(url_dataset)
+    filtro_1 = df['dt_creation']>=dt_i
+    filtro_2 = df['dt_creation']<=dt_f
+    df = df[(filtro_1) & (filtro_2)]
+    # Importar hyperlinks
+    df_hyperlinks = importar_hyperlinks(url_hyperlinks)
+    # Criar lista com autores
+    autores = list(df['autor'].unique())
+    autores = [x for x in autores if str(x) != 'nan']
+    # Listas com tags
+    tags_clean = lista_tags_clean(df)
+    tags_setores = lista_tags_setoriais(df)
+    tags_empresas = lista_tags_empresas(df)
 
-        # Importar hyperlinks
-        df_hyperlinks = importar_hyperlinks(url_hyperlinks)
+    st.success("Base importada. Análises disponíveis.")
 
-        filtro_1 = df['dt_creation']>=dt_i
-        filtro_2 = df['dt_creation']<=dt_f
-        df = df[(filtro_1) & (filtro_2)]
-
-        # Criar lista com autores
-        autores = list(df['autor'].unique())
-        autores = [x for x in autores if str(x) != 'nan']
-
-        tags_clean = lista_tags_clean(df)
-        tags_setores = lista_tags_setoriais(df)
-        tags_empresas = lista_tags_empresas(df)
-
-        # Qtd de Notas por autor -------
-        st.header("Notas por autor")
-        if st.checkbox("Quero ver a quantidade de notas que cada analista fez em dado período"):
-            
-            df_autor = notas_por_autor(df,dt_i,dt_f)
-            
-            st.success("Temos " + str(df_autor['Quantidade'].sum())+ " notas")
-            st.write(df_autor.sort_values(by='Quantidade',ascending = False))
-            
-        # Qtd de Notas por tag ----------
-        st.header("Notas por Tag")
-        if st.checkbox("Ver a quantidade de notas com tags específicas em dado período"):
-            
-            # Escolher tags
-            tags_selecionadas = st.multiselect("Quais tags quer?", options=tags_clean)
-            
-            if st.button("Ver notas por tag"):
-                df_tags = notas_por_tags(df, dt_i, dt_f, tags_selecionadas)
-                st.success("Temos " + str(df_tags.shape[0])+ " notas com essas tags simultaneamente.")
-                for t in df_tags['titulo']:
-                    url_link = get_hyperlink(t, df_hyperlinks)
-                    link = f'[{t}]({url_link})'
-                    st.markdown(link, unsafe_allow_html=True)
-                
-        # Qtd de Notas por autor e por tag ----------
-        st.header("Notas por Tag e Autor")
-        if st.checkbox("Ver a quantidade de notas com tags específicas em dado período e de um determinado autor"):
-            
-            # Escolher autor
-            autor = st.selectbox("Escolha um autor", options=autores)
-            st.write("Você escolheu", autor)
-
-            # Escolher Tags
-            tags_selecionadas = st.multiselect("Quais tags escolhe?", options=tags_clean)
-            if st.button("Ver notas por tags e autor"):
-                df_tags_autor = notas_por_tags_autor(df, dt_i, dt_f, tags_selecionadas, autor)
-                st.success("Temos " + str(df_tags_autor.shape[0])+ " notas com essas tags simultaneamente feitas por " + str(autor))
-                for t in df_tags_autor['titulo']:
-                    url_link = get_hyperlink(t, df_hyperlinks)
-                    link = f'[{t}]({url_link})'
-                    st.markdown(link, unsafe_allow_html=True)
-                
-        # Notícias que valem a leitura ----------
-        st.header("Notícias que valem a leitura")
-        if st.checkbox("Ver as notícias do período escolhido"):
-            
-            # Escolher tags
-            tags_selecionadas = st.multiselect("Marque as tags de interesse. Caso queira todas, não escolha nenhuma.", options=tags_clean)
-            
-            if st.button("Ver notícias"):
-                df_noticias = noticias_por_tags(df, dt_i, dt_f, tags_selecionadas)
-                st.success("Temos " + str(df_noticias.shape[0])+ " notícias com essas tags.")
-                for t in df_noticias['titulo']:
-                    url_link = get_hyperlink(t, df_hyperlinks)
-                    link = f'[{t}]({url_link})'
-                    st.markdown(link, unsafe_allow_html=True)
-                
-        # Six pagers da semana
-        st.header("Six Pagers")
-        if st.checkbox("Verificar os six pagers do período"):
-            # Escolher tags
-            tags_selecionadas = st.multiselect("Escolha as tags. Caso queira todas, não escolha nenhuma.", options=tags_clean)
-            
-            if st.button("Ver six pagers"):
-                df_pagers = pagers(df,dt_i,dt_f, tags_selecionadas)
-                st.success("Temos " + str(df_pagers.shape[0])+ " pagers nesse período")
-                for t in df_pagers['titulo']:
-                    url_link = get_hyperlink(t, df_hyperlinks)
-                    link = f'[{t}]({url_link})'
-                    st.markdown(link, unsafe_allow_html=True)
-                
-        # Graf Barras Ranking Tags das Empresas ---------
-        st.header("Ranking das Tags de Empresas")
-        if st.checkbox("Ver as tags de empresas mais comentadas"):
-            
-            # Quantidade de empresas
-            m = st.slider("Selecione a quantidade de empresas a mostrar",1,20)
-
-            df_rnk_empresa = df
-            df_qtd_empresa = pd.DataFrame({
-                'empresa':'',
-                'qtd':''
-            }, index=[0])
-
-            for i in tags_empresas:
-                qtd = 0
-                qtd = df_rnk_empresa[df_rnk_empresa['tag_1']==i].shape[0]+df_rnk_empresa[df_rnk_empresa['tag_2']==i].shape[0]+df_rnk_empresa[df_rnk_empresa['tag_3']==i].shape[0]+df_rnk_empresa[df_rnk_empresa['tag_4']==i].shape[0]+df_rnk_empresa[df_rnk_empresa['tag_5']==i].shape[0]+df_rnk_empresa[df_rnk_empresa['tag_6']==i].shape[0]+df_rnk_empresa[df_rnk_empresa['tag_7']==i].shape[0]+df_rnk_empresa[df_rnk_empresa['tag_8']==i].shape[0]+df_rnk_empresa[df_rnk_empresa['tag_9']==i].shape[0]+df_rnk_empresa[df_rnk_empresa['tag_10']==i].shape[0]+df_rnk_empresa[df_rnk_empresa['tag_11']==i].shape[0]+df_rnk_empresa[df_rnk_empresa['tag_12']==i].shape[0]
-                aux = pd.DataFrame({
-                        'empresa':i,
-                        'qtd':qtd
-                    }, index=[0])
-                df_qtd_empresa = df_qtd_empresa.append(aux)
-                df_qtd_empresa = df_qtd_empresa[df_qtd_empresa['qtd']!=""]
-                df_qtd_empresa = df_qtd_empresa.sort_values(by='qtd', ascending = False)
-
-            df_qtd_empresa = df_qtd_empresa[df_qtd_empresa['qtd']>0]
-            
-            if st.button("Ver gráfico de ranking das tags de empresas"):
-
-                # Gráfico Altair
-                bars = alt.Chart(df_qtd_empresa.iloc[0:m,:]).mark_bar().encode(
-                    alt.X('qtd'),
-                    alt.Y("empresa",sort=alt.EncodingSortField(field="qtd", op="count", order='ascending'))
-                )
-                text = bars.mark_text(
-                    align='left',
-                    baseline='middle',
-                    dx=3  # Nudges text to right so it doesn't appear on top of the bar
-                ).encode(
-                    text='qtd'
-                )
-                f_empresas = (bars + text).properties(height=50*m+30, width = 700)
-                st.write(f_empresas)
-             
-        # Graf Barras Ranking Tags das Setores ---------
-        st.header("Ranking das Tags de Setores")
-        if st.checkbox("Quero ver as tags de setores mais comentadas"):
-            
-            df_rnk_setor = df
-
-            df_qtd_setores = pd.DataFrame({
-                'setor':'',
-                'qtd':''
-            }, index=[0])
-
-            for i in tags_setores:
-                qtd = 0
-                qtd = df_rnk_setor[df_rnk_setor['tag_1']==i].shape[0]+df_rnk_setor[df_rnk_setor['tag_2']==i].shape[0]+df_rnk_setor[df_rnk_setor['tag_3']==i].shape[0]+df_rnk_setor[df_rnk_setor['tag_4']==i].shape[0]+df_rnk_setor[df_rnk_setor['tag_5']==i].shape[0]+df_rnk_setor[df_rnk_setor['tag_6']==i].shape[0]+df_rnk_setor[df_rnk_setor['tag_7']==i].shape[0]+df_rnk_setor[df_rnk_setor['tag_8']==i].shape[0]+df_rnk_setor[df_rnk_setor['tag_9']==i].shape[0]+df_rnk_setor[df_rnk_setor['tag_10']==i].shape[0]+df_rnk_setor[df_rnk_setor['tag_11']==i].shape[0]+df_rnk_setor[df_rnk_setor['tag_12']==i].shape[0]
-                aux = pd.DataFrame({
-                        'setor':i,
-                        'qtd':qtd
-                    }, index=[0])
-                df_qtd_setores = df_qtd_setores.append(aux)
-                df_qtd_setores = df_qtd_setores[df_qtd_setores['qtd']!=""]
-                df_qtd_setores = df_qtd_setores.sort_values(by='qtd', ascending = False)
-
-            df_qtd_setores = df_qtd_setores[df_qtd_setores['qtd']>0]
-            n = st.slider("Selecione a quantidade de setores a mostrar",1,df_qtd_setores.shape[0])
-
-            if st.button("Ver gráfico de ranking das tags de setores"):
-
-                # Gráfico Altair
-                bars = alt.Chart(df_qtd_setores.iloc[0:n,:]).mark_bar().encode(
-                    alt.X('qtd'),
-                    alt.Y("setor",sort=alt.EncodingSortField(field="qtd", op="count", order='ascending'))
-                )
-                text = bars.mark_text(
-                    align='left',
-                    baseline='middle',
-                    dx=3  # Nudges text to right so it doesn't appear on top of the bar
-                ).encode(
-                    text='qtd'
-                )
-                f_setores = (bars + text).properties(height=50*n+30, width = 700)
-                st.write(f_setores)
-
-        # Geração de conteúdo no tempo ---------
-        st.header("Geração de notas ao longo do tempo")
-        if st.checkbox("Ver a evolução de criação de notas"):
-            
-            # Escolher autor
-            autores.append("Todos")
-            autor = st.selectbox("Qual o autor?", options=autores)
-            st.write("Você escolheu", autor)
-
-            # Escolher Tags
-            tags_selecionadas = st.multiselect("Escoha as tags de interesse", options=tags_clean)
-
-            if st.button("Ver evolução"):
-
-                df_evolucao = notas_por_tags_autor(df, dt_i, dt_f, tags_selecionadas, autor)
-                # Plotar gráfico
-                df_evolucao = df_evolucao.groupby(['dt_creation'], as_index=False)['titulo'].count()
-                df_evolucao.columns = ['Data','Notas']
-                f_evolucao = alt.Chart(df_evolucao).mark_bar().encode(
-                    alt.X('Data', axis=alt.Axis(
-                        format='%d/%m/%y',
-                        labelAngle=-45
-                    )),
-                    alt.Y('Notas')
-                ).properties(height=500, width = 700)
-                st.write(f_evolucao)
-            
-        # Mapa de palavras ---------
-        st.header("Análise de conteúdo")
-        if st.checkbox("Criar um mapa de palavras das notas"):
-            
-            # Escolher autor
-            autores.append("Todos")
-            autor = st.selectbox("Qual o autor das notas?", options=autores)
-            st.write("Você escolheu", autor)
-
-            # Escolher Tags
-            tags_selecionadas = st.multiselect("Quais suas tags?", options=tags_clean)
-            
-            if st.button("Gerar Mapa de Palavras"):
-                df_mapa = notas_por_tags_autor(df, dt_i, dt_f, tags_selecionadas, autor)
-                tokens, str_word = token_and_str_word(df_mapa)
-                # Generate word cloud
-                wordcloud = WordCloud(width = 700, height = 500, random_state=1, background_color='white', colormap='seismic', collocations=False, stopwords = STOPWORDS).generate(str_word)
-                st.image(wordcloud.to_array())
+    # Qtd de Notas por autor -------
+    if st.checkbox("Quantidade de notas por analista"):
         
-        # Preços vs interação ---------
-        #st.header("Preços vs Interações")
-        #if st.checkbox("Ver as interações ao longo do Price Action"):
-            # Ler tickers disponíveis
-        #    tickers, lista_tickers = importar_tickers(url_tickers)
-        #    empresa = st.selectbox("Qual empresa quer olhar?", options=lista_tickers)
-        #    st.write("Você escolheu", empresa, ". As linhas verticais indicam os dias das interações.")
+        df_autor = notas_por_autor(df,dt_i,dt_f)
+        
+        st.success("Temos " + str(df_autor['Quantidade'].sum())+ " notas")
+        st.write(df_autor.sort_values(by='Quantidade',ascending = False))
+            
+    # Qtd de Notas por autor e por tag ----------
+    if st.checkbox("Notas por tags e por autor"):
+        
+        # Escolher autor
+        autores.append("Todos")
+        autor = st.selectbox("Escolha um autor", options=autores)
+        st.write("Você escolheu", autor)
 
-        #    if st.button("Gerar gráfico de Preços vs Interações"):
-        #        df_ticker = get_prices(empresa, dt_i, dt_f, df, tickers)
-        #        st.write(df_ticker.tail())
-        #        df_ticker['base']=0
-        #        df_ticker['marca']=np.where(df_ticker['interacao']>0,df_ticker['Close'],0)
-        #        st.write(df_ticker.tail())
-        #        base = alt.Chart(df_ticker).encode(
-        #        alt.X('Date',
-        #            axis=alt.Axis(
-        #                format='%d/%m/%y',
-        #                labelAngle=-45
-        #            )
-        #        ))
-        #        rule = base.mark_rule().encode(
-        #            alt.Y(
-        #                'base',
-        #                title='Preço',
-        #                scale=alt.Scale(zero=False),
-        #            ),
-        #            alt.Y2("marca")
-        #        ).interactive()
+        # Escolher Tags
+        tags_selecionadas = st.multiselect("Quais tags escolhe?", options=tags_clean)
+        if st.button("Ver notas por tags e autor"):
+            df_tags_autor = notas_por_tags_autor(df, dt_i, dt_f, tags_selecionadas, autor)
+            st.success(str(df_tags_autor.shape[0])+ " notas com essas tags simultaneamente de " + str(autor))
+            for t in df_tags_autor['titulo']:
+                url_link = get_hyperlink(t, df_hyperlinks)
+                link = f'[{t}]({url_link})'
+                st.markdown(link, unsafe_allow_html=True)
+            
+    # Notícias que valem a leitura ----------
+    if st.checkbox("Notícias que valem a leitura"):
+        
+        # Escolher tags
+        tags_selecionadas = st.multiselect("Marque as tags de interesse. Caso queira todas, não escolha nenhuma.", options=tags_clean)
+        
+        if st.button("Ver notícias"):
+            df_noticias = noticias_por_tags(df, dt_i, dt_f, tags_selecionadas)
+            st.success(str(df_noticias.shape[0])+ " notícias com essas tags.")
+            for t in df_noticias['titulo']:
+                url_link = get_hyperlink(t, df_hyperlinks)
+                link = f'[{t}]({url_link})'
+                st.markdown(link, unsafe_allow_html=True)
+            
+    # Six pagers da semana
+    if st.checkbox("Six pagers"):
+        # Escolher tags
+        tags_selecionadas = st.multiselect("Escolha as tags. Caso queira todas, não escolha nenhuma.", options=tags_clean)
+        
+        if st.button("Ver six pagers"):
+            df_pagers = pagers(df,dt_i,dt_f, tags_selecionadas)
+            st.success("Temos " + str(df_pagers.shape[0])+ " pagers nesse período")
+            for t in df_pagers['titulo']:
+                url_link = get_hyperlink(t, df_hyperlinks)
+                link = f'[{t}]({url_link})'
+                st.markdown(link, unsafe_allow_html=True)
+            
+    # Graf Barras Ranking Tags das Empresas ---------
+    if st.checkbox("Ranking das Tags de Empresas"):
+        
+        # Quantidade de empresas
+        m = st.slider("Quantidade de empresas a mostrar",1,20)
 
-        #        line =  base.mark_line(color='blue').encode(
-        #            y='Close'
-        #        ).interactive()
+        df_rnk_empresa = df
+        df_qtd_empresa = pd.DataFrame({
+            'empresa':'',
+            'qtd':''
+        }, index=[0])
 
-        #        points = base.mark_point().encode(
-        #            y='Close'
-        #        ).interactive()
+        for i in tags_empresas:
+            qtd = 0
+            qtd = df_rnk_empresa[df_rnk_empresa['tag_1']==i].shape[0]+df_rnk_empresa[df_rnk_empresa['tag_2']==i].shape[0]+df_rnk_empresa[df_rnk_empresa['tag_3']==i].shape[0]+df_rnk_empresa[df_rnk_empresa['tag_4']==i].shape[0]+df_rnk_empresa[df_rnk_empresa['tag_5']==i].shape[0]+df_rnk_empresa[df_rnk_empresa['tag_6']==i].shape[0]+df_rnk_empresa[df_rnk_empresa['tag_7']==i].shape[0]+df_rnk_empresa[df_rnk_empresa['tag_8']==i].shape[0]+df_rnk_empresa[df_rnk_empresa['tag_9']==i].shape[0]+df_rnk_empresa[df_rnk_empresa['tag_10']==i].shape[0]+df_rnk_empresa[df_rnk_empresa['tag_11']==i].shape[0]+df_rnk_empresa[df_rnk_empresa['tag_12']==i].shape[0]
+            aux = pd.DataFrame({
+                    'empresa':i,
+                    'qtd':qtd
+                }, index=[0])
+            df_qtd_empresa = df_qtd_empresa.append(aux)
+            df_qtd_empresa = df_qtd_empresa[df_qtd_empresa['qtd']!=""]
+            df_qtd_empresa = df_qtd_empresa.sort_values(by='qtd', ascending = False)
 
-        #        text = points.mark_text(
-        #            align='center',
-        #            baseline='middle',
-        #            dx=7,
-        #            fontSize = 15
-        #        ).encode(
-        #            text='Close'
-        #        )
+        df_qtd_empresa = df_qtd_empresa[df_qtd_empresa['qtd']>0]
+        
+        if st.button("Gráfico de ranking das tags de empresas"):
 
-        #        st.write((rule + line + text).properties(height=500, width = 700).configure_axis(
-        #                    labelFontSize=15,
-        #                    titleFontSize=15
-        #                ))
-                # "Clean" o dataframe
-        #        df_ticker = 0
+            # Gráfico Altair
+            bars = alt.Chart(df_qtd_empresa.iloc[0:m,:]).mark_bar().encode(
+                alt.X('qtd'),
+                alt.Y("empresa",sort=alt.EncodingSortField(field="qtd", op="count", order='ascending'))
+            )
+            text = bars.mark_text(
+                align='left',
+                baseline='middle',
+                dx=3  # Nudges text to right so it doesn't appear on top of the bar
+            ).encode(
+                text='qtd'
+            )
+            f_empresas = (bars + text).properties(height=50*m+30, width = 700)
+            st.write(f_empresas)
+            
+    # Graf Barras Ranking Tags das Setores ---------
+    if st.checkbox("Ranking das Tags de Setores"):
+        
+        df_rnk_setor = df
+        df_qtd_setores = pd.DataFrame({
+            'setor':'',
+            'qtd':''
+        }, index=[0])
+
+        for i in tags_setores:
+            qtd = 0
+            qtd = df_rnk_setor[df_rnk_setor['tag_1']==i].shape[0]+df_rnk_setor[df_rnk_setor['tag_2']==i].shape[0]+df_rnk_setor[df_rnk_setor['tag_3']==i].shape[0]+df_rnk_setor[df_rnk_setor['tag_4']==i].shape[0]+df_rnk_setor[df_rnk_setor['tag_5']==i].shape[0]+df_rnk_setor[df_rnk_setor['tag_6']==i].shape[0]+df_rnk_setor[df_rnk_setor['tag_7']==i].shape[0]+df_rnk_setor[df_rnk_setor['tag_8']==i].shape[0]+df_rnk_setor[df_rnk_setor['tag_9']==i].shape[0]+df_rnk_setor[df_rnk_setor['tag_10']==i].shape[0]+df_rnk_setor[df_rnk_setor['tag_11']==i].shape[0]+df_rnk_setor[df_rnk_setor['tag_12']==i].shape[0]
+            aux = pd.DataFrame({
+                    'setor':i,
+                    'qtd':qtd
+                }, index=[0])
+            df_qtd_setores = df_qtd_setores.append(aux)
+            df_qtd_setores = df_qtd_setores[df_qtd_setores['qtd']!=""]
+            df_qtd_setores = df_qtd_setores.sort_values(by='qtd', ascending = False)
+
+        df_qtd_setores = df_qtd_setores[df_qtd_setores['qtd']>0]
+        n = st.slider("Quantidade de setores a mostrar",1,df_qtd_setores.shape[0])
+
+        if st.button("Gráfico de ranking das tags de setores"):
+
+            # Gráfico Altair
+            bars = alt.Chart(df_qtd_setores.iloc[0:n,:]).mark_bar().encode(
+                alt.X('qtd'),
+                alt.Y("setor",sort=alt.EncodingSortField(field="qtd", op="count", order='ascending'))
+            )
+            text = bars.mark_text(
+                align='left',
+                baseline='middle',
+                dx=3  # Nudges text to right so it doesn't appear on top of the bar
+            ).encode(
+                text='qtd'
+            )
+            f_setores = (bars + text).properties(height=50*n+30, width = 700)
+            st.write(f_setores)
+
+    # Geração de conteúdo no tempo ---------
+    if st.checkbox("Geração de notas ao longo do tempo"):
+        
+        # Escolher autor
+        autores.append("Todos")
+        autor = st.selectbox("Qual o autor?", options=autores)
+        st.write("Você escolheu", autor)
+
+        # Escolher Tags
+        tags_selecionadas = st.multiselect("Escoha as tags de interesse", options=tags_clean)
+
+        if st.button("Ver evolução"):
+
+            df_evolucao = notas_por_tags_autor(df, dt_i, dt_f, tags_selecionadas, autor)
+            # Plotar gráfico
+            df_evolucao = df_evolucao.groupby(['dt_creation'], as_index=False)['titulo'].count()
+            df_evolucao.columns = ['Data','Notas']
+            f_evolucao = alt.Chart(df_evolucao).mark_bar().encode(
+                alt.X('Data', axis=alt.Axis(
+                    format='%d/%m/%y',
+                    labelAngle=-45
+                )),
+                alt.Y('Notas')
+            ).properties(height=500, width = 700)
+            st.write(f_evolucao)
+        
+    # Mapa de palavras ---------
+    if st.checkbox("Mapa de palavras das notas"):
+        
+        # Escolher autor
+        autores.append("Todos")
+        autor = st.selectbox("Qual o analista?", options=autores)
+        st.write("Você escolheu", autor)
+
+        # Escolher Tags
+        tags_selecionadas = st.multiselect("Quais suas tags?", options=tags_clean)
+        
+        if st.button("Gerar mapa de palavras"):
+            df_mapa = notas_por_tags_autor(df, dt_i, dt_f, tags_selecionadas, autor)
+            tokens, str_word = token_and_str_word(df_mapa)
+            # Generate word cloud
+            wordcloud = WordCloud(width = 700, height = 500, random_state=1, background_color='white', colormap='seismic', collocations=False, stopwords = STOPWORDS).generate(str_word)
+            st.image(wordcloud.to_array())
+    
+    # Preços vs interação ---------
+    #st.header("Preços vs Interações")
+    #if st.checkbox("Ver as interações ao longo do Price Action"):
+        # Ler tickers disponíveis
+    #    tickers, lista_tickers = importar_tickers(url_tickers)
+    #    empresa = st.selectbox("Qual empresa quer olhar?", options=lista_tickers)
+    #    st.write("Você escolheu", empresa, ". As linhas verticais indicam os dias das interações.")
+
+    #    if st.button("Gerar gráfico de Preços vs Interações"):
+    #        df_ticker = get_prices(empresa, dt_i, dt_f, df, tickers)
+    #        st.write(df_ticker.tail())
+    #        df_ticker['base']=0
+    #        df_ticker['marca']=np.where(df_ticker['interacao']>0,df_ticker['Close'],0)
+    #        st.write(df_ticker.tail())
+    #        base = alt.Chart(df_ticker).encode(
+    #        alt.X('Date',
+    #            axis=alt.Axis(
+    #                format='%d/%m/%y',
+    #                labelAngle=-45
+    #            )
+    #        ))
+    #        rule = base.mark_rule().encode(
+    #            alt.Y(
+    #                'base',
+    #                title='Preço',
+    #                scale=alt.Scale(zero=False),
+    #            ),
+    #            alt.Y2("marca")
+    #        ).interactive()
+
+    #        line =  base.mark_line(color='blue').encode(
+    #            y='Close'
+    #        ).interactive()
+
+    #        points = base.mark_point().encode(
+    #            y='Close'
+    #        ).interactive()
+
+    #        text = points.mark_text(
+    #            align='center',
+    #            baseline='middle',
+    #            dx=7,
+    #            fontSize = 15
+    #        ).encode(
+    #            text='Close'
+    #        )
+
+    #        st.write((rule + line + text).properties(height=500, width = 700).configure_axis(
+    #                    labelFontSize=15,
+    #                    titleFontSize=15
+    #                ))
+            # "Clean" o dataframe
+    #        df_ticker = 0
 else:
     st.warning("Senha errada. Acesso não autorizado.")
 
