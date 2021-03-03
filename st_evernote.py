@@ -39,26 +39,22 @@ def importar_tickers(url):
 # Pegar preços
 @st.cache(persist=True, max_entries = 20, ttl = 1800, show_spinner=False, allow_output_mutation=True)
 def get_prices(ticker, dt_i, dt_f, df, tickers):
-    aux = yf.Ticker(ticker+str(".SA"))
+    
+    aux = pd.read_csv('https://raw.githubusercontent.com/soilmo/Evernote/main/prices_adj.csv', usecols=["Unnamed: 0",ticker + str(" BZ EQUITY")])[1:]
+    aux.columns = ['data']+list(aux.columns)[1:]
+    aux['data']=aux['data'].apply(lambda x:str_to_date(x))
+    filtro_1 = aux['data']>=dt_i
+    filtro_2 = aux['data']<=dt_f
+    aux = aux[(filtro_1)&(filtro_2)]
 
-    #get the historical prices for this ticker
-    aux = aux.history(period='1d', start=dt_i, end=dt_f)
-    aux = aux.reset_index()
-    aux['ticker']=ticker
-
-    aux = aux[['Date','ticker',"Close"]]
     aux['interacao']=0
 
     for i in range(0,aux.shape[0]):
         
-        ticker = aux.iloc[i,1]
         dt = aux.iloc[i,0]
         tag = tickers[tickers['ticker']==ticker]['tag'].iloc[0]
         interacao = get_interacao(tag, dt, df)
-        if interacao > 0:
-            print(ticker, dt, tag, interacao)
-        
-        aux.iloc[i,3]=interacao
+        aux.iloc[i,2]=interacao
 
     return aux
 
@@ -451,7 +447,10 @@ def get_hyperlink(titulo, df_hyperlinks):
     except:
         link = 'NA'
     return link
-# -----------------------------------------------------------
+
+# String to date
+def str_to_date(x):
+    return datetime.datetime.strptime(x, '%Y-%m-%d')
 
 # Title
 st.title("Análises Evernote")
@@ -667,58 +666,59 @@ if senha=="indie2021":
             st.image(wordcloud.to_array())
     
     # Preços vs interação ---------
-    #st.header("Preços vs Interações")
-    #if st.checkbox("Ver as interações ao longo do Price Action"):
+    if st.checkbox("Interações vs Price Action"):
         # Ler tickers disponíveis
-    #    tickers, lista_tickers = importar_tickers(url_tickers)
-    #    empresa = st.selectbox("Qual empresa quer olhar?", options=lista_tickers)
-    #    st.write("Você escolheu", empresa, ". As linhas verticais indicam os dias das interações.")
+        tickers, lista_tickers = importar_tickers(url_tickers)
+        empresa = st.selectbox("Qual empresa quer olhar?", options=lista_tickers)
+        st.write("Você escolheu", empresa, ". As verticais são os dias das interações.")
 
-    #    if st.button("Gerar gráfico de Preços vs Interações"):
-    #        df_ticker = get_prices(empresa, dt_i, dt_f, df, tickers)
-    #        st.write(df_ticker.tail())
-    #        df_ticker['base']=0
-    #        df_ticker['marca']=np.where(df_ticker['interacao']>0,df_ticker['Close'],0)
-    #        st.write(df_ticker.tail())
-    #        base = alt.Chart(df_ticker).encode(
-    #        alt.X('Date',
-    #            axis=alt.Axis(
-    #                format='%d/%m/%y',
-    #                labelAngle=-45
-    #            )
-    #        ))
-    #        rule = base.mark_rule().encode(
-    #            alt.Y(
-    #                'base',
-    #                title='Preço',
-    #                scale=alt.Scale(zero=False),
-    #            ),
-    #            alt.Y2("marca")
-    #        ).interactive()
+        if st.button("Gerar gráfico de Preços vs Interações"):
+            df_ticker = get_prices(empresa, dt_i, dt_f, df, tickers)
+            df_ticker['base']=0
+            df_ticker['marca']=np.where(df_ticker['interacao']>0,df_ticker[empresa+str(' BZ EQUITY')],0)
+            df_ticker = df_ticker.fillna(method='ffill')
+            df_ticker[empresa+str(' BZ EQUITY')] = pd.to_numeric(df_ticker[empresa+str(' BZ EQUITY')], downcast ='float')
+            
+            base = alt.Chart(df_ticker).encode(
+            alt.X('data',
+                axis=alt.Axis(
+                    format='%d/%m/%y',
+                    labelAngle=-45
+                )
+            ))
+            rule = base.mark_rule().encode(
+                alt.Y(
+                    'base',
+                    title='Preço',
+                    scale=alt.Scale(zero=False),
+                ),
+                alt.Y2("marca")
+            ).interactive()
 
-    #        line =  base.mark_line(color='blue').encode(
-    #            y='Close'
-    #        ).interactive()
+            line =  base.mark_line(color='blue').encode(
+                y=empresa+str(' BZ EQUITY')
+            ).interactive()
 
-    #        points = base.mark_point().encode(
-    #            y='Close'
-    #        ).interactive()
+            points = base.mark_point().encode(
+                y=empresa+str(' BZ EQUITY')
+            ).interactive()
 
-    #        text = points.mark_text(
-    #            align='center',
-    #            baseline='middle',
-    #            dx=7,
-    #            fontSize = 15
-    #        ).encode(
-    #            text='Close'
-    #        )
+            text = points.mark_text(
+                align='center',
+                baseline='middle',
+                dx=7,
+                fontSize = 15
+            ).encode(
+                text=alt.Text(empresa+str(' BZ EQUITY'),
+                                format=',.2f')
+            )
 
-    #        st.write((rule + line + text).properties(height=500, width = 700).configure_axis(
-    #                    labelFontSize=15,
-    #                    titleFontSize=15
-    #                ))
+            st.write((rule + line + text).properties(height=500, width = 700).configure_axis(
+                        labelFontSize=15,
+                        titleFontSize=15
+                    ))
             # "Clean" o dataframe
-    #        df_ticker = 0
+            df_ticker = 0
 else:
     st.warning("Senha errada. Acesso não autorizado.")
 
