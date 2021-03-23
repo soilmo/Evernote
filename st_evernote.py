@@ -700,20 +700,12 @@ if senha=="indie2021":
             ).interactive()
 
             points = base.mark_point().encode(
-                y=empresa+str(' BZ EQUITY')
+                y=empresa+str(' BZ EQUITY'),
+                opacity=alt.value(0),
+                tooltip = [empresa+str(' BZ EQUITY'),'data']
             ).interactive()
 
-            text = points.mark_text(
-                align='center',
-                baseline='middle',
-                dx=7,
-                fontSize = 15
-            ).encode(
-                text=alt.Text(empresa+str(' BZ EQUITY'),
-                                format=',.2f')
-            )
-
-            st.write((rule + line + text).properties(height=500, width = 700).configure_axis(
+            st.write((rule + line + points).properties(height=500, width = 700).configure_axis(
                         labelFontSize=15,
                         titleFontSize=15
                     ))
