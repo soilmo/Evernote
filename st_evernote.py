@@ -9,6 +9,7 @@ from PIL import Image
 from wordcloud import WordCloud, STOPWORDS
 import yfinance as yf
 import numpy as np
+import base64
 
 # Importar dataset
 url_dataset = 'https://github.com/soilmo/Evernote/blob/main/notas_historico_new.xlsx?raw=true'
@@ -192,7 +193,7 @@ def notas_por_tags(df_tags, dt_i, dt_f, tags_selecionadas):
     
     return df_tags
     
-# Notas por tags
+# Notas por tags e autor
 @st.cache(persist=True, max_entries = 20, ttl = 1800, show_spinner=False)
 def notas_por_tags_autor(df_tags_autor, dt_i, dt_f, tags_selecionadas, autor):
     
@@ -452,6 +453,17 @@ def get_hyperlink(titulo, df_hyperlinks):
 def str_to_date(x):
     return datetime.datetime.strptime(x, '%Y-%m-%d')
 
+# Criar link para download
+@st.cache(persist=True, max_entries = 20, ttl = 1800, show_spinner=False)
+def get_table_download_link(df, arquivo,dt_i,dt_f):
+    
+    csvfile = df.to_csv(index=False)
+    b64 = base64.b64encode(csvfile.encode()).decode()
+    new_filename = arquivo + "_" + str(dt_i) + "_" + str(dt_f) + ".csv"
+    href = f'<a href="data:file/csv;base64,{b64}" download="{new_filename}">Download da base desse período</a>'
+
+    return href
+
 # Title
 st.title("Análises Evernote")
 senha = st.text_input("Senha","Digite a senha")
@@ -486,6 +498,12 @@ if senha=="indie2021":
 
     st.success("Base importada. Análises disponíveis.")
 
+    # Download base
+    #if st.button("Baixar base"):
+    arquivo = 'base_evernote'
+    url_base = get_table_download_link(df, arquivo,dt_i,dt_f)
+    st.markdown(url_base, unsafe_allow_html=True)
+    
     # Qtd de Notas por autor -------
     if st.checkbox("Quantidade de notas por analista"):
         
