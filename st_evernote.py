@@ -682,53 +682,6 @@ if senha=="indie2021":
             # Generate word cloud
             wordcloud = WordCloud(width = 700, height = 500, random_state=1, background_color='white', colormap='seismic', collocations=False, stopwords = STOPWORDS).generate(str_word)
             st.image(wordcloud.to_array())
-    
-    # Preços vs interação ---------
-    if st.checkbox("Interações vs Price Action"):
-        # Ler tickers disponíveis
-        tickers, lista_tickers = importar_tickers(url_tickers)
-        empresa = st.selectbox("Qual empresa quer olhar?", options=lista_tickers)
-        st.write("Você escolheu", empresa, ". As verticais são os dias das interações.")
-
-        if st.button("Gerar gráfico de Preços vs Interações"):
-            df_ticker = get_prices(empresa, dt_i, dt_f, df, tickers)
-            df_ticker['base']=0
-            df_ticker['marca']=np.where(df_ticker['interacao']>0,df_ticker[empresa+str(' BZ EQUITY')],0)
-            df_ticker = df_ticker.fillna(method='ffill')
-            df_ticker[empresa+str(' BZ EQUITY')] = pd.to_numeric(df_ticker[empresa+str(' BZ EQUITY')], downcast ='float')
-            
-            base = alt.Chart(df_ticker).encode(
-            alt.X('data',
-                axis=alt.Axis(
-                    format='%d/%m/%y',
-                    labelAngle=-45
-                )
-            ))
-            rule = base.mark_rule().encode(
-                alt.Y(
-                    'base',
-                    title='Preço',
-                    scale=alt.Scale(zero=False),
-                ),
-                alt.Y2("marca")
-            ).interactive()
-
-            line =  base.mark_line(color='blue').encode(
-                y=empresa+str(' BZ EQUITY')
-            ).interactive()
-
-            points = base.mark_point().encode(
-                y=empresa+str(' BZ EQUITY'),
-                opacity=alt.value(0),
-                tooltip = [empresa+str(' BZ EQUITY'),'data']
-            ).interactive()
-
-            st.write((rule + line + points).properties(height=500, width = 700).configure_axis(
-                        labelFontSize=15,
-                        titleFontSize=15
-                    ))
-            # "Clean" o dataframe
-            df_ticker = 0
 else:
     st.warning("Senha errada. Acesso não autorizado.")
 
