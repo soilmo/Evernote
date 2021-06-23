@@ -6,7 +6,6 @@ import seaborn as sns
 import datetime
 import altair as alt
 from PIL import Image
-import joblib
 import nltk
 from streamlit.caching import suppress_cached_st_function_warning
 nltk.download('punkt')
@@ -17,6 +16,10 @@ from wordcloud import WordCloud, STOPWORDS
 import base64
 from sklearn.feature_extraction.text import CountVectorizer
 import numpy as np
+
+from io import BytesIO
+import pickle
+import requests
 
 # Importar dataset
 url_dataset = 'https://github.com/soilmo/Evernote/blob/main/notas_historico_new.xlsx?raw=true'
@@ -817,7 +820,7 @@ if senha=="indie2021":
             text='qtd'
         )
 
-        f_empresas = (bars + text).properties(height=50*m+30, width = 1200)
+        f_empresas = (bars + text).properties(height=50*m+30, width = 900)
         st.write(f_empresas)
         
     # Graf Barras Ranking Tags das Setores ---------
@@ -856,7 +859,7 @@ if senha=="indie2021":
         ).encode(
             text='qtd'
         )
-        f_setores = (bars + text).properties(height=50*n+30, width = 1200)
+        f_setores = (bars + text).properties(height=50*n+30, width = 900)
         st.write(f_setores)
 
     # Geração de notas conteúdo no tempo ---------
@@ -902,7 +905,7 @@ if senha=="indie2021":
             )),
             alt.Y('Notas'),
             tooltip = ['Data', 'Notas']
-        ).properties(height=300, width = 1200)
+        ).properties(height=300, width = 900)
         st.write(f_evolucao_pagers)
 
     # Mapa de palavras ---------
@@ -921,8 +924,10 @@ if senha=="indie2021":
         
         if st.button("Montar análises"):
 
-            folder = 'C:/Dropbox (Indie Capital)/Share Logos/Research/Análise/Evernote/'
-            teste_tagger = joblib.load(folder + 'POS_tagger_brill.pkl')
+            mLink = 'https://github.com/soilmo/Evernote/blob/main/POS_tagger_brill.pkl?raw=true'
+            mfile = BytesIO(requests.get(mLink).content)
+            teste_tagger = pickle.load(mfile)
+
     
             # Montar df do mapa e vetor de texto
             df_mapa = notas_por_tags_autor(df, dt_i, dt_f, tags_selecionadas, autor)
