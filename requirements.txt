@@ -9,3 +9,4 @@ numpy==1.18.1
 nltk==3.6.1
 joblib==1.0.1
 sklearn==0.0
+requests==2.25.1
