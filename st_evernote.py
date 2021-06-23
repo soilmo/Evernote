@@ -882,7 +882,7 @@ if senha=="indie2021":
             )),
             alt.Y('Notas'),
             tooltip = ['Data', 'Notas']
-        ).properties(height=300, width = 1200)
+        ).properties(height=300, width = 900)
         st.write(f_evolucao_notas)
 
     # Geração de pagers conteúdo no tempo ---------
