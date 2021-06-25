@@ -745,26 +745,29 @@ if senha=="indie2021":
         df_tags_autor = notas_por_tags_autor(df, dt_i, dt_f, tags_selecionadas, autor)
 
         st.write(str(df_tags_autor.shape[0])+ " notas com essas tags de " + str(autor))
-
-        for t in df_tags_autor['titulo']:
-            url_link = get_hyperlink(t, df_hyperlinks)
-            link = f'[{t}]({url_link})'
-            st.markdown(link, unsafe_allow_html=True)
-       
+        if st.button("Ver notas por tag e autor"):
+        
+            for t in df_tags_autor['titulo']:
+                url_link = get_hyperlink(t, df_hyperlinks)
+                link = f'[{t}]({url_link})'
+                st.markdown(link, unsafe_allow_html=True)
+        
     # Notícias que valem a leitura ----------
     with col1.beta_expander("Notícias que valem a leitura"):
         
         # Escolher tags
         tags_selecionadas = st.multiselect("Marque as tags de interesse. Caso queira todas, não escolha nenhuma.", options=tags_clean)
-        
+
         df_noticias = noticias_por_tags(df, dt_i, dt_f, tags_selecionadas)
         st.write(str(df_noticias.shape[0])+ " notícias com essas tags.")
 
-        for t in df_noticias['titulo']:
-            url_link = get_hyperlink(t, df_hyperlinks)
-            link = f'[{t}]({url_link})'
-            st.markdown(link, unsafe_allow_html=True)
+        if st.button("Ver notícias"):
         
+            for t in df_noticias['titulo']:
+                url_link = get_hyperlink(t, df_hyperlinks)
+                link = f'[{t}]({url_link})'
+                st.markdown(link, unsafe_allow_html=True)
+            
     # Six pagers
     with col2.beta_expander("Six pagers"):
         # Escolher autor
@@ -775,54 +778,58 @@ if senha=="indie2021":
         
         df_pagers = pagers(df,dt_i,dt_f, tags_selecionadas, autor)
         st.write("Temos " + str(df_pagers.shape[0])+ " pagers nesse período")
-        with st.spinner('Procurando pagers...'):
-            for t in df_pagers['titulo']:
-                url_link = get_hyperlink(t, df_hyperlinks)
-                link = f'[{t}]({url_link})'
-                st.markdown(link, unsafe_allow_html=True)
+
+        if st.button("Ver pagers"):
             
+            for t in df_pagers['titulo']:
+                    url_link = get_hyperlink(t, df_hyperlinks)
+                    link = f'[{t}]({url_link})'
+                    st.markdown(link, unsafe_allow_html=True)
+                
     # Graf Barras Ranking Tags das Empresas ---------
     with st.beta_expander("Ranking das Tags de Empresas"):
         
         # Quantidade de empresas
         m = st.slider("Quantidade de empresas a mostrar",1,20)
-
-        df_rnk_empresa = df
-        df_qtd_empresa = pd.DataFrame({
-            'empresa':'',
-            'qtd':''
-        }, index=[0])
-
-        for i in tags_empresas:
-            qtd = 0
-            qtd = df_rnk_empresa[df_rnk_empresa['tag_1']==i].shape[0]+df_rnk_empresa[df_rnk_empresa['tag_2']==i].shape[0]+df_rnk_empresa[df_rnk_empresa['tag_3']==i].shape[0]+df_rnk_empresa[df_rnk_empresa['tag_4']==i].shape[0]+df_rnk_empresa[df_rnk_empresa['tag_5']==i].shape[0]+df_rnk_empresa[df_rnk_empresa['tag_6']==i].shape[0]+df_rnk_empresa[df_rnk_empresa['tag_7']==i].shape[0]+df_rnk_empresa[df_rnk_empresa['tag_8']==i].shape[0]+df_rnk_empresa[df_rnk_empresa['tag_9']==i].shape[0]+df_rnk_empresa[df_rnk_empresa['tag_10']==i].shape[0]+df_rnk_empresa[df_rnk_empresa['tag_11']==i].shape[0]+df_rnk_empresa[df_rnk_empresa['tag_12']==i].shape[0]
-            aux = pd.DataFrame({
-                    'empresa':i,
-                    'qtd':qtd
-                }, index=[0])
-            df_qtd_empresa = df_qtd_empresa.append(aux)
-            df_qtd_empresa = df_qtd_empresa[df_qtd_empresa['qtd']!=""]
-            df_qtd_empresa = df_qtd_empresa.sort_values(by='qtd', ascending = False)
-
-        df_qtd_empresa = df_qtd_empresa[df_qtd_empresa['qtd']>0]
-
-        # Gráfico Altair
-        bars = alt.Chart(df_qtd_empresa.iloc[0:m,:]).mark_bar().encode(
-            alt.X('qtd'),
-            alt.Y("empresa",sort=alt.EncodingSortField(field="qtd", op="count", order='ascending')),
-            tooltip = ['empresa','qtd']
-        )
-        text = bars.mark_text(
-            align='left',
-            baseline='middle',
-            dx=3  # Nudges text to right so it doesn't appear on top of the bar
-        ).encode(
-            text='qtd'
-        )
-
-        f_empresas = (bars + text).properties(height=50*m+30, width = 900)
-        st.write(f_empresas)
         
+        if st.button("Gráficos de empresas"):
+        
+            df_rnk_empresa = df
+            df_qtd_empresa = pd.DataFrame({
+                'empresa':'',
+                'qtd':''
+            }, index=[0])
+
+            for i in tags_empresas:
+                qtd = 0
+                qtd = df_rnk_empresa[df_rnk_empresa['tag_1']==i].shape[0]+df_rnk_empresa[df_rnk_empresa['tag_2']==i].shape[0]+df_rnk_empresa[df_rnk_empresa['tag_3']==i].shape[0]+df_rnk_empresa[df_rnk_empresa['tag_4']==i].shape[0]+df_rnk_empresa[df_rnk_empresa['tag_5']==i].shape[0]+df_rnk_empresa[df_rnk_empresa['tag_6']==i].shape[0]+df_rnk_empresa[df_rnk_empresa['tag_7']==i].shape[0]+df_rnk_empresa[df_rnk_empresa['tag_8']==i].shape[0]+df_rnk_empresa[df_rnk_empresa['tag_9']==i].shape[0]+df_rnk_empresa[df_rnk_empresa['tag_10']==i].shape[0]+df_rnk_empresa[df_rnk_empresa['tag_11']==i].shape[0]+df_rnk_empresa[df_rnk_empresa['tag_12']==i].shape[0]
+                aux = pd.DataFrame({
+                        'empresa':i,
+                        'qtd':qtd
+                    }, index=[0])
+                df_qtd_empresa = df_qtd_empresa.append(aux)
+                df_qtd_empresa = df_qtd_empresa[df_qtd_empresa['qtd']!=""]
+                df_qtd_empresa = df_qtd_empresa.sort_values(by='qtd', ascending = False)
+
+            df_qtd_empresa = df_qtd_empresa[df_qtd_empresa['qtd']>0]
+
+            # Gráfico Altair
+            bars = alt.Chart(df_qtd_empresa.iloc[0:m,:]).mark_bar().encode(
+                alt.X('qtd'),
+                alt.Y("empresa",sort=alt.EncodingSortField(field="qtd", op="count", order='ascending')),
+                tooltip = ['empresa','qtd']
+            )
+            text = bars.mark_text(
+                align='left',
+                baseline='middle',
+                dx=3  # Nudges text to right so it doesn't appear on top of the bar
+            ).encode(
+                text='qtd'
+            )
+
+            f_empresas = (bars + text).properties(height=50*m+30, width = 900)
+            st.write(f_empresas)
+            
     # Graf Barras Ranking Tags das Setores ---------
     with st.beta_expander("Ranking das Tags de Setores"):
 
@@ -846,21 +853,23 @@ if senha=="indie2021":
         df_qtd_setores = df_qtd_setores[df_qtd_setores['qtd']>0]
         n = st.slider("Quantidade de setores a mostrar",1,df_qtd_setores.shape[0])
 
-        # Gráfico Altair
-        bars = alt.Chart(df_qtd_setores.iloc[0:n,:]).mark_bar().encode(
-            alt.X('qtd'),
-            alt.Y("setor",sort=alt.EncodingSortField(field="qtd", op="count", order='ascending')),
-            tooltip = ['setor','qtd']
-        )
-        text = bars.mark_text(
-            align='left',
-            baseline='middle',
-            dx=3  # Nudges text to right so it doesn't appear on top of the bar
-        ).encode(
-            text='qtd'
-        )
-        f_setores = (bars + text).properties(height=50*n+30, width = 900)
-        st.write(f_setores)
+        if st.button("Gráfico de setores"):
+        
+            # Gráfico Altair
+            bars = alt.Chart(df_qtd_setores.iloc[0:n,:]).mark_bar().encode(
+                alt.X('qtd'),
+                alt.Y("setor",sort=alt.EncodingSortField(field="qtd", op="count", order='ascending')),
+                tooltip = ['setor','qtd']
+            )
+            text = bars.mark_text(
+                align='left',
+                baseline='middle',
+                dx=3  # Nudges text to right so it doesn't appear on top of the bar
+            ).encode(
+                text='qtd'
+            )
+            f_setores = (bars + text).properties(height=50*n+30, width = 900)
+            st.write(f_setores)
 
     # Geração de notas conteúdo no tempo ---------
     with st.beta_expander("Geração de notas ao longo do tempo"):
@@ -871,19 +880,21 @@ if senha=="indie2021":
         # Escolher Tags
         tags_selecionadas = st.multiselect("Escoha as tags de interesse", options=tags_clean)
 
-        df_evolucao_notas = notas_por_tags_autor(df, dt_i, dt_f, tags_selecionadas, autor)
-        # Plotar gráfico
-        df_evolucao_notas = df_evolucao_notas.groupby(['dt_creation'], as_index=False)['titulo'].count()
-        df_evolucao_notas.columns = ['Data','Notas']
-        f_evolucao_notas = alt.Chart(df_evolucao_notas).mark_bar().encode(
-            alt.X('Data', axis=alt.Axis(
-                format='%d/%m/%y',
-                labelAngle=-45
-            )),
-            alt.Y('Notas'),
-            tooltip = ['Data', 'Notas']
-        ).properties(height=300, width = 900)
-        st.write(f_evolucao_notas)
+        if st.button("Notas com o tempo"):
+        
+            df_evolucao_notas = notas_por_tags_autor(df, dt_i, dt_f, tags_selecionadas, autor)
+            # Plotar gráfico
+            df_evolucao_notas = df_evolucao_notas.groupby(['dt_creation'], as_index=False)['titulo'].count()
+            df_evolucao_notas.columns = ['Data','Notas']
+            f_evolucao_notas = alt.Chart(df_evolucao_notas).mark_bar().encode(
+                alt.X('Data', axis=alt.Axis(
+                    format='%d/%m/%y',
+                    labelAngle=-45
+                )),
+                alt.Y('Notas'),
+                tooltip = ['Data', 'Notas']
+            ).properties(height=300, width = 900)
+            st.write(f_evolucao_notas)
 
     # Geração de pagers conteúdo no tempo ---------
     with st.beta_expander("Geração de pagers ao longo do tempo"):
@@ -894,19 +905,21 @@ if senha=="indie2021":
         # Escolher Tags
         tags_selecionadas = st.multiselect("Escoha as tags dos pagers", options=tags_clean)
 
-        df_evolucao_pagers = pagers(df,dt_i,dt_f, tags_selecionadas, autor)
-        # Plotar gráfico
-        df_evolucao_pagers = df_evolucao_pagers.groupby(['dt_creation'], as_index=False)['titulo'].count()
-        df_evolucao_pagers.columns = ['Data','Notas']
-        f_evolucao_pagers = alt.Chart(df_evolucao_pagers).mark_bar().encode(
-            alt.X('Data', axis=alt.Axis(
-                format='%d/%m/%y',
-                labelAngle=-45
-            )),
-            alt.Y('Notas'),
-            tooltip = ['Data', 'Notas']
-        ).properties(height=300, width = 900)
-        st.write(f_evolucao_pagers)
+        if st.button("Pagers com o tempo"):
+        
+            df_evolucao_pagers = pagers(df,dt_i,dt_f, tags_selecionadas, autor)
+            # Plotar gráfico
+            df_evolucao_pagers = df_evolucao_pagers.groupby(['dt_creation'], as_index=False)['titulo'].count()
+            df_evolucao_pagers.columns = ['Data','Notas']
+            f_evolucao_pagers = alt.Chart(df_evolucao_pagers).mark_bar().encode(
+                alt.X('Data', axis=alt.Axis(
+                    format='%d/%m/%y',
+                    labelAngle=-45
+                )),
+                alt.Y('Notas'),
+                tooltip = ['Data', 'Notas']
+            ).properties(height=300, width = 900)
+            st.write(f_evolucao_pagers)
 
     # Mapa de palavras ---------
     with st.beta_expander("Análise textual"):
